@@ -1,6 +1,6 @@
 
 -- MANTENEDOR PARA VETERINARIO
-create or replace PROCEDURE GESTIONAR_VETERINARIOS (
+create or replace PROCEDURE GESTIONAR_VETERINARIOS(
     p_operacion  VARCHAR2,
     p_id_veterinario  NUMBER DEFAULT NULL,
     p_nombre VARCHAR2 DEFAULT NULL,
