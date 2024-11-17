@@ -58,95 +58,124 @@ END;
 ----------------------------
 -- Codigo idea de gpt pa su aplicacion
 <?php
-// Configuración de conexión a la base de datos
-$host = 'tu_host';
-$puerto = 'tu_puerto';
-$nombre_bd = 'tu_base_de_datos';
-$usuario = 'tu_usuario';
-$contrasena = 'tu_contrasena';
+// Incluir el archivo de conexión a la base de datos
+include '../includes/db_connection.php';
 
-// Obtener el ID de la mascota desde el formulario
-$id_mascota = $_POST['id_mascota'];
+// Verificar si se recibió el ID de la mascota desde el formulario
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_mascota'])) {
+    $id_mascota = intval($_POST['id_mascota']); // Asegurarse de que sea un número entero
 
-try {
-    // Conexión a la base de datos
-    $conn = oci_connect($usuario, $contrasena, "$host:$puerto/$nombre_bd");
+    // Consultar la información de la ficha médica
+    $query_ficha = "
+        SELECT
+            M.ID_MASCOTA,
+            M.NOMBRE AS NOMBRE_MASCOTA,
+            M.EDAD,
+            C.NOMBRE || ' ' || C.APELLIDO AS CLIENTE,
+            R.NOMBRE_RAZA AS RAZA,
+            E.NOMBRE_ESPECIE AS ESPECIE
+        FROM
+            LAROATLB_MASCOTA M
+        INNER JOIN
+            LAROATLB_CLIENTE C ON M.ID_CLIENTE = C.ID_CLIENTE
+        INNER JOIN
+            LAROATLB_RAZA R ON M.ID_RAZA = R.ID_RAZA
+        INNER JOIN
+            LAROATLB_ESPECIE E ON R.ID_ESPECIE = E.ID_ESPECIE
+        WHERE
+            M.ID_MASCOTA = :id_mascota";
 
-    if (!$conn) {
-        $e = oci_error();
-        throw new Exception($e['message']);
-    }
+    // Preparar y ejecutar la consulta
+    $stmt_ficha = oci_parse($conn, $query_ficha);
+    oci_bind_by_name($stmt_ficha, ':id_mascota', $id_mascota);
+    oci_execute($stmt_ficha);
 
-    // Preparar la llamada al procedimiento
-    $stid = oci_parse($conn, 'BEGIN LAROATLB_OBTENER_FICHA_COMPLETA(:id_mascota, :ficha, :tratamientos); END;');
+    // Obtener los resultados de la ficha médica
+    $ficha = oci_fetch_assoc($stmt_ficha);
 
-    // Asignar los parámetros
-    oci_bind_by_name($stid, ':id_mascota', $id_mascota);
-    $ficha_cursor = oci_new_cursor($conn);
-    $tratamientos_cursor = oci_new_cursor($conn);
-    oci_bind_by_name($stid, ':ficha', $ficha_cursor, -1, OCI_B_CURSOR);
-    oci_bind_by_name($stid, ':tratamientos', $tratamientos_cursor, -1, OCI_B_CURSOR);
+    // Consultar los tratamientos relacionados con la mascota
+    $query_tratamientos = "
+        SELECT
+            T.ID_TRATAMIENTO,
+            T.FECHA_INICIO,
+            T.FECHA_FIN,
+            T.DESCRIPCION
+        FROM
+            LAROATLB_TRATAMIENTO T
+        WHERE
+            T.ID_MASCOTA = :id_mascota";
 
-    // Ejecutar el procedimiento
-    oci_execute($stid);
-    oci_execute($ficha_cursor);
-    oci_execute($tratamientos_cursor);
+    $stmt_tratamientos = oci_parse($conn, $query_tratamientos);
+    oci_bind_by_name($stmt_tratamientos, ':id_mascota', $id_mascota);
+    oci_execute($stmt_tratamientos);
 
-    // Mostrar los datos de la ficha
-    echo "<h1>Ficha Médica de la Mascota</h1>";
-    echo "<table border='1'>
-            <tr>
-                <th>ID Mascota</th>
-                <th>Nombre</th>
-                <th>Edad</th>
-                <th>Raza</th>
-                <th>Especie</th>
-                <th>Nombre del Dueño</th>
-                <th>Teléfono</th>
-                <th>Email</th>
-            </tr>";
-
-    while ($row = oci_fetch_assoc($ficha_cursor)) {
-        echo "<tr>
-                <td>{$row['ID_MASCOTA']}</td>
-                <td>{$row['NOMBRE_MASCOTA']}</td>
-                <td>{$row['EDAD_MASCOTA']}</td>
-                <td>{$row['NOMBRE_RAZA']}</td>
-                <td>{$row['NOMBRE_ESPECIE']}</td>
-                <td>{$row['NOMBRE_CLIENTE']}</td>
-                <td>{$row['TELEFONO_CLIENTE']}</td>
-                <td>{$row['EMAIL_CLIENTE']}</td>
-            </tr>";
-    }
-    echo "</table>";
-
-    // Mostrar los tratamientos
-    echo "<h2>Tratamientos Relacionados</h2>";
-    echo "<table border='1'>
-            <tr>
-                <th>ID Tratamiento</th>
-                <th>Descripción</th>
-                <th>Fecha</th>
-            </tr>";
-
-    while ($row = oci_fetch_assoc($tratamientos_cursor)) {
-        echo "<tr>
-                <td>{$row['ID_TRATAMIENTO']}</td>
-                <td>{$row['DESCRIPCION']}</td>
-                <td>{$row['FECHA']}</td>
-            </tr>";
-    }
-    echo "</table>";
-
-    // Cerrar cursores y conexión
-    oci_free_statement($stid);
-    oci_free_statement($ficha_cursor);
-    oci_free_statement($tratamientos_cursor);
-    oci_close($conn);
-} catch (Exception $e) {
-    echo "Error: " . $e->getMessage();
+    // Cerrar el statement de la ficha
+    oci_free_statement($stmt_ficha);
 }
 ?>
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha Médica de Mascota</title>
+    <link rel="stylesheet" href="../styles/styles.css">
+</head>
+<body>
+    <h1>Ficha Médica de Mascota</h1>
+
+    <!-- Formulario para ingresar el ID de la mascota -->
+    <form method="POST" action="ficha_mascota.php">
+        <label for="id_mascota">Ingrese el ID de la Mascota:</label>
+        <input type="number" id="id_mascota" name="id_mascota" required>
+        <button type="submit">Consultar</button>
+    </form>
+
+    <?php if (isset($ficha)): ?>
+        <h2>Información de la Mascota</h2>
+        <table border="1">
+            <tr><th>ID Mascota</th><td><?php echo $ficha['ID_MASCOTA']; ?></td></tr>
+            <tr><th>Nombre</th><td><?php echo $ficha['NOMBRE_MASCOTA']; ?></td></tr>
+            <tr><th>Edad</th><td><?php echo $ficha['EDAD']; ?></td></tr>
+            <tr><th>Cliente</th><td><?php echo $ficha['CLIENTE']; ?></td></tr>
+            <tr><th>Raza</th><td><?php echo $ficha['RAZA']; ?></td></tr>
+            <tr><th>Especie</th><td><?php echo $ficha['ESPECIE']; ?></td></tr>
+        </table>
+
+        <h2>Tratamientos Relacionados</h2>
+        <table border="1">
+            <tr>
+                <th>ID Tratamiento</th>
+                <th>Fecha Inicio</th>
+                <th>Fecha Fin</th>
+                <th>Descripción</th>
+            </tr>
+            <?php while ($tratamiento = oci_fetch_assoc($stmt_tratamientos)): ?>
+                <tr>
+                    <td><?php echo $tratamiento['ID_TRATAMIENTO']; ?></td>
+                    <td><?php echo $tratamiento['FECHA_INICIO']; ?></td>
+                    <td><?php echo $tratamiento['FECHA_FIN']; ?></td>
+                    <td><?php echo $tratamiento['DESCRIPCION']; ?></td>
+                </tr>
+            <?php endwhile; ?>
+        </table>
+    <?php elseif ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
+        <p>No se encontró información para el ID de la mascota ingresado.</p>
+    <?php endif; ?>
+
+    <?php
+    // Cerrar el statement de tratamientos
+    if (isset($stmt_tratamientos)) {
+        oci_free_statement($stmt_tratamientos);
+    }
+
+    // Cerrar la conexión a la base de datos
+    oci_close($conn);
+    ?>
+</body>
+</html>
+
 --------------------------------------------------------------------------
 
 
