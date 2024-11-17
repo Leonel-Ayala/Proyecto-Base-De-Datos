@@ -83,7 +83,7 @@ BEGIN
         CLOSE c_veterinario;
 
     ELSE
-        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "I", "U" o "D".');
+        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
     END IF;
 
     -- Confirmar la transacción (en caso de no estar en modo automático)
