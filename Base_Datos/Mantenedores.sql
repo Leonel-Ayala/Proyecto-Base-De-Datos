@@ -918,3 +918,95 @@ EXCEPTION
         RAISE_APPLICATION_ERROR(-20001, 'Ocurrió un error: ' || SQLERRM);
 END;
 
+
+
+------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------
+--MANTENEDOR DE TRATAMIENTOS
+
+
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_TRATAMIENTOS(
+    p_operacion     VARCHAR2,
+    p_id_tratamiento NUMBER DEFAULT NULL,
+    p_descripcion   VARCHAR2 DEFAULT NULL,
+    p_fecha         DATE DEFAULT NULL,
+    p_id_mascota    NUMBER DEFAULT NULL,
+    p_id_veterinario NUMBER DEFAULT NULL
+)
+IS
+    -- Cursor para verificar si un tratamiento existe
+    CURSOR c_tratamiento (id_trt NUMBER) IS
+        SELECT ID_TRATAMIENTO
+        FROM LAROATLB_TRATAMIENTO
+        WHERE ID_TRATAMIENTO = id_trt;
+
+    -- Cursor para mostrar todos los tratamientos con información adicional
+    CURSOR c_tratamientos_all IS
+        SELECT T.ID_TRATAMIENTO, T.DESCRIPCION, T.FECHA, 
+               M.NOMBRE AS NOMBRE_MASCOTA, 
+               V.NOMBRE || ' ' || V.APELLIDO1 || ' ' || V.APELLIDO2 AS NOMBRE_VETERINARIO
+        FROM LAROATLB_TRATAMIENTO T
+        JOIN LAROATLB_MASCOTA M ON T.ID_MASCOTA = M.ID_MASCOTA
+        JOIN LAROATLB_VETERINARIO V ON T.ID_VETERINARIO = V.ID_VETERINARIO;
+
+    v_existente c_tratamiento%ROWTYPE; -- Variable para manejar datos del cursor
+BEGIN
+    LOCK TABLE LAROATLB_TRATAMIENTO IN ROW EXCLUSIVE MODE;
+
+    IF UPPER(p_operacion) = 'R' THEN
+        -- Leer todos los registros
+        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE TRATAMIENTOS ---');
+        FOR v_row IN c_tratamientos_all LOOP
+            DBMS_OUTPUT.PUT_LINE('ID Tratamiento: ' || v_row.ID_TRATAMIENTO || 
+                                 ', Descripción: ' || v_row.DESCRIPCION || 
+                                 ', Fecha: ' || TO_CHAR(v_row.FECHA, 'YYYY-MM-DD') ||
+                                 ', Mascota: ' || v_row.NOMBRE_MASCOTA || 
+                                 ', Veterinario: ' || v_row.NOMBRE_VETERINARIO);
+        END LOOP;
+
+    ELSIF UPPER(p_operacion) = 'C' THEN
+        -- Inserción
+        INSERT INTO LAROATLB_TRATAMIENTO (
+            DESCRIPCION, FECHA, ID_MASCOTA, ID_VETERINARIO
+        ) VALUES (
+            p_descripcion, p_fecha, p_id_mascota, p_id_veterinario
+        );
+        DBMS_OUTPUT.PUT_LINE('Tratamiento insertado correctamente.');
+
+    ELSIF UPPER(p_operacion) = 'U' THEN
+        -- Verificar existencia
+        OPEN c_tratamiento(p_id_tratamiento);
+        FETCH c_tratamiento INTO v_existente;
+        IF c_tratamiento%FOUND THEN
+            -- Actualización
+            UPDATE LAROATLB_TRATAMIENTO
+            SET DESCRIPCION = p_descripcion,
+                FECHA = p_fecha,
+                ID_MASCOTA = p_id_mascota,
+                ID_VETERINARIO = p_id_veterinario
+            WHERE ID_TRATAMIENTO = p_id_tratamiento;
+            DBMS_OUTPUT.PUT_LINE('Tratamiento actualizado correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró el tratamiento con el ID proporcionado.');
+        END IF;
+        CLOSE c_tratamiento;
+
+    ELSIF UPPER(p_operacion) = 'D' THEN
+        -- Verificar existencia
+        OPEN c_tratamiento(p_id_tratamiento);
+        FETCH c_tratamiento INTO v_existente;
+        IF c_tratamiento%FOUND THEN
+            -- Eliminación
+            DELETE FROM LAROATLB_TRATAMIENTO
+            WHERE ID_TRATAMIENTO = p_id_tratamiento;
+            DBMS_OUTPUT.PUT_LINE('Tratamiento eliminado correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró el tratamiento con el ID proporcionado.');
+        END IF;
+        CLOSE c_tratamiento;
+
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+    END
+
+
