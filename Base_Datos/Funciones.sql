@@ -26,4 +26,3 @@ BEGIN
 
     RETURN EMAIL;
 END;
-/
