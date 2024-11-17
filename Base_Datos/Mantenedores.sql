@@ -108,13 +108,13 @@ IS
 
     -- Cursor para verificar si una secretaria existe
     CURSOR c_secretaria (id_sec NUMBER) IS
-        SELECT ID_SECRETARIA
+        SELECT ID_SECRE
         FROM LAROATLB_SECRETARIA
-        WHERE ID_SECRETARIA = id_sec;
+        WHERE ID_SECRE = id_sec;
 
     -- Cursor para mostrar todas las secretarias
     CURSOR c_secretarias_all IS
-        SELECT ID_SECRETARIA, NOMBRE, APELLIDO1, APELLIDO2, TELEFONO, EMAIL
+        SELECT ID_SECRE, NOMBRE, APELLIDO1, APELLIDO2, TELEFONO, EMAIL
         FROM LAROATLB_SECRETARIA;
 
     v_existente c_secretaria%ROWTYPE; -- Variable para manejar datos del cursor
@@ -126,7 +126,7 @@ BEGIN
         -- Leer todos los registros
         DBMS_OUTPUT.PUT_LINE('--- LISTADO DE SECRETARIAS ---');
         FOR v_row IN c_secretarias_all LOOP
-            DBMS_OUTPUT.PUT_LINE('ID: ' || v_row.ID_SECRETARIA || 
+            DBMS_OUTPUT.PUT_LINE('ID: ' || v_row.ID_SECRE || 
                                  ', Nombre: ' || v_row.NOMBRE || ' ' || v_row.APELLIDO1 || ' ' || v_row.APELLIDO2 || 
                                  ', Teléfono: ' || v_row.TELEFONO || 
                                  ', Email: ' || v_row.EMAIL);
@@ -153,7 +153,7 @@ BEGIN
                 APELLIDO2 = p_apellido2,
                 TELEFONO = p_telefono,
                 EMAIL = NUEVO_CORREO
-            WHERE ID_SECRETARIA = p_id_secretaria;
+            WHERE ID_SECRE = p_id_secretaria;
             DBMS_OUTPUT.PUT_LINE('Secretaria actualizada correctamente.');
         ELSE
             DBMS_OUTPUT.PUT_LINE('No se encontró la secretaria con el ID proporcionado.');
@@ -167,7 +167,7 @@ BEGIN
         IF c_secretaria%FOUND THEN
             -- Eliminación
             DELETE FROM LAROATLB_SECRETARIA
-            WHERE ID_SECRETARIA = p_id_secretaria;
+            WHERE ID_SECRE = p_id_secretaria;
             DBMS_OUTPUT.PUT_LINE('Secretaria eliminada correctamente.');
         ELSE
             DBMS_OUTPUT.PUT_LINE('No se encontró la secretaria con el ID proporcionado.');
