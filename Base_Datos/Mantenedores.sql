@@ -554,94 +554,21 @@ END;
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
+--MANTENEDOR DE RAZA
+
+
+------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE ESPECIE
 
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_ESPECIES (
-    p_operacion      VARCHAR2,
-    p_id_especie     NUMBER DEFAULT NULL,
-    p_nombre_especie VARCHAR2 DEFAULT NULL
-)
-IS
-    -- Cursor para verificar si una especie existe
-    CURSOR c_especie (id_especie NUMBER) IS
-        SELECT ID_ESPECIE
-        FROM LAROATLB_ESPECIE
-        WHERE ID_ESPECIE = id_especie;
-
-    -- Cursor para mostrar todas las especies
-    CURSOR c_especies_all IS
-        SELECT ID_ESPECIE, NOMBRE_ESPECIE
-        FROM LAROATLB_ESPECIE;
-
-    v_existente c_especie%ROWTYPE; -- Variable para manejar datos del cursor
-BEGIN
-    LOCK TABLE LAROATLB_ESPECIE IN ROW EXCLUSIVE MODE;
-
-    IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todos los registros
-        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE ESPECIES ---');
-        FOR v_row IN c_especies_all LOOP
-            DBMS_OUTPUT.PUT_LINE('ID Especie: ' || v_row.ID_ESPECIE || 
-                                 ', Nombre de la Especie: ' || v_row.NOMBRE_ESPECIE);
-        END LOOP;
-
-    ELSIF UPPER(p_operacion) = 'C' THEN
-        -- Inserción
-        INSERT INTO LAROATLB_ESPECIE (
-            NOMBRE_ESPECIE
-        ) VALUES (
-            p_nombre_especie
-        );
-        DBMS_OUTPUT.PUT_LINE('Especie insertada correctamente.');
-
-    ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar existencia
-        OPEN c_especie(p_id_especie);
-        FETCH c_especie INTO v_existente;
-        IF c_especie%FOUND THEN
-            -- Actualización
-            UPDATE LAROATLB_ESPECIE
-            SET NOMBRE_ESPECIE = p_nombre_especie
-            WHERE ID_ESPECIE = p_id_especie;
-            DBMS_OUTPUT.PUT_LINE('Especie actualizada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la especie con el ID proporcionado.');
-        END IF;
-        CLOSE c_especie;
-
-    ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar existencia
-        OPEN c_especie(p_id_especie);
-        FETCH c_especie INTO v_existente;
-        IF c_especie%FOUND THEN
-            -- Eliminación
-            DELETE FROM LAROATLB_ESPECIE
-            WHERE ID_ESPECIE = p_id_especie;
-            DBMS_OUTPUT.PUT_LINE('Especie eliminada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la especie con el ID proporcionado.');
-        END IF;
-        CLOSE c_especie;
-
-    ELSE
-        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
-    END IF;
-
-    -- Confirmar la transacción
-    COMMIT;
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Ocurrió un error: ' || SQLERRM);
-END;
-
-------------------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------------------
---MANTENEDOR DE RAZA
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE MASCOTA
 
+
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
---MANTENEDOR DE ESPECIE
+--MANTENEDOR DE CITA
+
+
