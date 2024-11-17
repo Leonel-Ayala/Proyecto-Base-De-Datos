@@ -1,6 +1,6 @@
 
 -- MANTENEDOR PARA VETERINARIO
-create or replace PROCEDURE GESTIONAR_VETERINARIOS (
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_VETERINARIOS (
     p_operacion  VARCHAR2,
     p_id_veterinario  NUMBER DEFAULT NULL,
     p_nombre VARCHAR2 DEFAULT NULL,
@@ -11,18 +11,35 @@ create or replace PROCEDURE GESTIONAR_VETERINARIOS (
 ) 
 IS
     NUEVO_CORREO VARCHAR2(100);
+
     -- Cursor para verificar si un veterinario existe
     CURSOR c_veterinario (id_vet NUMBER) IS
         SELECT ID_VETERINARIO
         FROM LAROATLB_VETERINARIO
         WHERE ID_VETERINARIO = id_vet;
 
+    -- Cursor para mostrar todos los veterinarios
+    CURSOR c_veterinarios_all IS
+        SELECT ID_VETERINARIO, NOMBRE, APELLIDO1, APELLIDO2, ESPECIALIDAD, TELEFONO, EMAIL
+        FROM LAROATLB_VETERINARIO;
+
     v_existente c_veterinario%ROWTYPE; -- Variable para manejar datos del cursor
 BEGIN
     LOCK TABLE LAROATLB_VETERINARIO IN ROW EXCLUSIVE MODE;
-    NUEVO_CORREO := LAROATLB_GENERA_CORREO_VETE(p_nombre,p_apellido1,p_apellido2);
+    NUEVO_CORREO := LAROATLB_GENERA_CORREO_VETE(p_nombre, p_apellido1, p_apellido2);
 
     IF UPPER(p_operacion) = 'R' THEN
+        -- Leer todos los registros
+        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE VETERINARIOS ---');
+        FOR v_row IN c_veterinarios_all LOOP
+            DBMS_OUTPUT.PUT_LINE('ID: ' || v_row.ID_VETERINARIO || 
+                                 ', Nombre: ' || v_row.NOMBRE || ' ' || v_row.APELLIDO1 || ' ' || v_row.APELLIDO2 || 
+                                 ', Especialidad: ' || v_row.ESPECIALIDAD || 
+                                 ', Teléfono: ' || v_row.TELEFONO || 
+                                 ', Email: ' || v_row.EMAIL);
+        END LOOP;
+
+    ELSIF UPPER(p_operacion) = 'C' THEN
         -- Inserción
         INSERT INTO LAROATLB_VETERINARIO (
             NOMBRE, APELLIDO1, APELLIDO2, ESPECIALIDAD, TELEFONO, EMAIL
@@ -66,14 +83,14 @@ BEGIN
         CLOSE c_veterinario;
 
     ELSE
-        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "INSERTAR", "ACTUALIZAR" o "BORRAR".');
+        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "I", "U" o "D".');
     END IF;
 
     -- Confirmar la transacción (en caso de no estar en modo automático)
     COMMIT;
 EXCEPTION
-     WHEN PROGRAM_ERROR THEN
-        RAISE_APPLICATION_ERROR(-6501,'ERROR DE PROGRAMA');
+    WHEN PROGRAM_ERROR THEN
+        RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
 END;
 
 
