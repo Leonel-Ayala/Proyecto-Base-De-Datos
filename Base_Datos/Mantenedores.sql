@@ -826,4 +826,96 @@ END;
 ------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE CITA
 
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CITAS (
+    p_operacion      VARCHAR2,
+    p_id_cita        NUMBER DEFAULT NULL,
+    p_fecha          DATE DEFAULT NULL,
+    p_sala           NUMBER DEFAULT NULL,
+    p_id_mascota     NUMBER DEFAULT NULL,
+    p_id_veterinario NUMBER DEFAULT NULL
+)
+IS
+    -- Cursor para verificar si una cita existe
+    CURSOR c_cita (id_cita NUMBER) IS
+        SELECT c.ID_CITA, c.FECHA, c.SALA, c.ID_MASCOTA, c.ID_VETERINARIO,
+               m.NOMBRE AS NOMBRE_MASCOTA, v.NOMBRE AS NOMBRE_VETERINARIO
+        FROM LAROATLB_CITA c
+        JOIN LAROATLB_MASCOTA m ON c.ID_MASCOTA = m.ID_MASCOTA
+        JOIN LAROATLB_VETERINARIO v ON c.ID_VETERINARIO = v.ID_VETERINARIO
+        WHERE c.ID_CITA = id_cita;
+
+    -- Cursor para mostrar todas las citas
+    CURSOR c_citas_all IS
+        SELECT c.ID_CITA, c.FECHA, c.SALA, c.ID_MASCOTA,m.NOMBRE AS NOMBRE_MASCOTA, c.ID_VETERINARIO,
+                v.NOMBRE AS NOMBRE_VETERINARIO
+        FROM LAROATLB_CITA c
+        JOIN LAROATLB_MASCOTA m ON c.ID_MASCOTA = m.ID_MASCOTA
+        JOIN LAROATLB_VETERINARIO v ON c.ID_VETERINARIO = v.ID_VETERINARIO;
+
+    v_existente c_cita%ROWTYPE; -- Variable para manejar datos del cursor
+BEGIN
+    LOCK TABLE LAROATLB_CITA IN ROW EXCLUSIVE MODE;
+
+    IF UPPER(p_operacion) = 'R' THEN
+        -- Leer todas las citas
+        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE CITAS ---');
+        FOR v_row IN c_citas_all LOOP
+            DBMS_OUTPUT.PUT_LINE('ID Cita: ' || v_row.ID_CITA || 
+                                 ', Fecha: ' || v_row.FECHA || 
+                                 ', Sala: ' || v_row.SALA || 
+                                 ', Nombre Mascota: ' || v_row.NOMBRE_MASCOTA || 
+                                 ', Nombre Veterinario: ' || v_row.NOMBRE_VETERINARIO);
+        END LOOP;
+
+    ELSIF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de Cita
+        INSERT INTO LAROATLB_CITA (
+            FECHA, SALA, ID_MASCOTA, ID_VETERINARIO
+        ) VALUES (
+            p_fecha, p_sala, p_id_mascota, p_id_veterinario
+        );
+        DBMS_OUTPUT.PUT_LINE('Cita insertada correctamente.');
+
+    ELSIF UPPER(p_operacion) = 'U' THEN
+        -- Verificar existencia de la cita
+        OPEN c_cita(p_id_cita);
+        FETCH c_cita INTO v_existente;
+        IF c_cita%FOUND THEN
+            -- Actualización de Cita
+            UPDATE LAROATLB_CITA
+            SET FECHA = p_fecha,
+                SALA = p_sala,
+                ID_MASCOTA = p_id_mascota,
+                ID_VETERINARIO = p_id_veterinario
+            WHERE ID_CITA = p_id_cita;
+            DBMS_OUTPUT.PUT_LINE('Cita actualizada correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró la cita con el ID proporcionado.');
+        END IF;
+        CLOSE c_cita;
+
+    ELSIF UPPER(p_operacion) = 'D' THEN
+        -- Verificar existencia de la cita
+        OPEN c_cita(p_id_cita);
+        FETCH c_cita INTO v_existente;
+        IF c_cita%FOUND THEN
+            -- Eliminación de Cita
+            DELETE FROM LAROATLB_CITA
+            WHERE ID_CITA = p_id_cita;
+            DBMS_OUTPUT.PUT_LINE('Cita eliminada correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró la cita con el ID proporcionado.');
+        END IF;
+        CLOSE c_cita;
+
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+    END IF;
+
+    -- Confirmar la transacción
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Ocurrió un error: ' || SQLERRM);
+END;
 
