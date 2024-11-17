@@ -19,7 +19,7 @@ IS
         FROM LAROATLB_VETERINARIO
         WHERE ID_VETERINARIO = id_vet;
 
-    -- Cursor para mostrar todos los veterinarios
+    -- Cursor para mostrar todos los veterinarios (modificado para su uso en PHP)
     CURSOR c_veterinarios_all IS
         SELECT ID_VETERINARIO, NOMBRE, APELLIDO1, APELLIDO2, ESPECIALIDAD, TELEFONO, EMAIL
         FROM LAROATLB_VETERINARIO;
@@ -30,14 +30,13 @@ BEGIN
     NUEVO_CORREO := LAROATLB_GENERA_CORREO_VETE(p_nombre, p_apellido1, p_apellido2);
 
     IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todos los registros
-        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE VETERINARIOS ---');
+        -- Leer todos los registros y retornar resultados en formato adecuado para PHP
         FOR v_row IN c_veterinarios_all LOOP
-            DBMS_OUTPUT.PUT_LINE('ID: ' || v_row.ID_VETERINARIO || 
-                                 ', Nombre: ' || v_row.NOMBRE || ' ' || v_row.APELLIDO1 || ' ' || v_row.APELLIDO2 || 
-                                 ', Especialidad: ' || v_row.ESPECIALIDAD || 
-                                 ', Teléfono: ' || v_row.TELEFONO || 
-                                 ', Email: ' || v_row.EMAIL);
+            -- Aquí se puede utilizar un método para almacenar los resultados en una tabla de PHP o JSON
+            -- Los siguientes PRINT están en formato adecuado para ser interpretados por PHP
+            DBMS_OUTPUT.PUT_LINE(v_row.ID_VETERINARIO || '|' || 
+                                 v_row.NOMBRE || ' ' || v_row.APELLIDO1 || ' ' || v_row.APELLIDO2 || '|' || 
+                                 v_row.ESPECIALIDAD || '|' || v_row.TELEFONO || '|' || v_row.EMAIL);
         END LOOP;
 
     ELSIF UPPER(p_operacion) = 'C' THEN
