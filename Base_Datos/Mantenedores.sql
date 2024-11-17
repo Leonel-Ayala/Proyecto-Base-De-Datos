@@ -556,15 +556,270 @@ END;
 ------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE RAZA
 
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_RAZAS (
+    p_operacion      VARCHAR2,
+    p_id_raza        NUMBER DEFAULT NULL,
+    p_nombre_raza    VARCHAR2 DEFAULT NULL,
+    p_id_especie     NUMBER DEFAULT NULL
+)
+IS
+    -- Cursor para verificar si una raza existe
+    CURSOR c_raza (id_raza NUMBER) IS
+        SELECT ID_RAZA
+        FROM LAROATLB_RAZA
+        WHERE ID_RAZA = id_raza;
+
+    -- Cursor para mostrar todas las razas con su especie asociada
+    CURSOR c_razas_all IS
+        SELECT r.ID_RAZA, r.NOMBRE_RAZA, e.NOMBRE_ESPECIE
+        FROM LAROATLB_RAZA r
+        JOIN LAROATLB_ESPECIE e ON r.ID_ESPECIE = e.ID_ESPECIE;
+
+    v_existente c_raza%ROWTYPE; -- Variable para manejar datos del cursor
+BEGIN
+    LOCK TABLE LAROATLB_RAZA IN ROW EXCLUSIVE MODE;
+
+    IF UPPER(p_operacion) = 'R' THEN
+        -- Leer todas las razas con su especie asociada
+        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE RAZAS ---');
+        FOR v_row IN c_razas_all LOOP
+            DBMS_OUTPUT.PUT_LINE('ID Raza: ' || v_row.ID_RAZA || 
+                                 ', Nombre de la Raza: ' || v_row.NOMBRE_RAZA ||
+                                 ', Nombre de la Especie: ' || v_row.NOMBRE_ESPECIE);
+        END LOOP;
+
+    ELSIF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de Raza
+        INSERT INTO LAROATLB_RAZA (
+            NOMBRE_RAZA,
+            ID_ESPECIE
+        ) VALUES (
+            p_nombre_raza,
+            p_id_especie
+        );
+        DBMS_OUTPUT.PUT_LINE('Raza insertada correctamente.');
+
+    ELSIF UPPER(p_operacion) = 'U' THEN
+        -- Verificar existencia de la raza
+        OPEN c_raza(p_id_raza);
+        FETCH c_raza INTO v_existente;
+        IF c_raza%FOUND THEN
+            -- Actualización de Raza
+            UPDATE LAROATLB_RAZA
+            SET NOMBRE_RAZA = p_nombre_raza,
+                ID_ESPECIE = p_id_especie
+            WHERE ID_RAZA = p_id_raza;
+            DBMS_OUTPUT.PUT_LINE('Raza actualizada correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró la raza con el ID proporcionado.');
+        END IF;
+        CLOSE c_raza;
+
+    ELSIF UPPER(p_operacion) = 'D' THEN
+        -- Verificar existencia de la raza
+        OPEN c_raza(p_id_raza);
+        FETCH c_raza INTO v_existente;
+        IF c_raza%FOUND THEN
+            -- Eliminación de Raza
+            DELETE FROM LAROATLB_RAZA
+            WHERE ID_RAZA = p_id_raza;
+            DBMS_OUTPUT.PUT_LINE('Raza eliminada correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró la raza con el ID proporcionado.');
+        END IF;
+        CLOSE c_raza;
+
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+    END IF;
+
+    -- Confirmar la transacción
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Ocurrió un error: ' || SQLERRM);
+END;
+
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE ESPECIE
 
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_ESPECIES (
+    p_operacion      VARCHAR2,
+    p_id_especie     NUMBER DEFAULT NULL,
+    p_nombre_especie VARCHAR2 DEFAULT NULL
+)
+IS
+    -- Cursor para verificar si una especie existe
+    CURSOR c_especie (id_especie NUMBER) IS
+        SELECT ID_ESPECIE
+        FROM LAROATLB_ESPECIE
+        WHERE ID_ESPECIE = id_especie;
+
+    -- Cursor para mostrar todas las especies
+    CURSOR c_especies_all IS
+        SELECT ID_ESPECIE, NOMBRE_ESPECIE
+        FROM LAROATLB_ESPECIE;
+
+    v_existente c_especie%ROWTYPE; -- Variable para manejar datos del cursor
+BEGIN
+    LOCK TABLE LAROATLB_ESPECIE IN ROW EXCLUSIVE MODE;
+
+    IF UPPER(p_operacion) = 'R' THEN
+        -- Leer todas las especies
+        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE ESPECIES ---');
+        FOR v_row IN c_especies_all LOOP
+            DBMS_OUTPUT.PUT_LINE('ID Especie: ' || v_row.ID_ESPECIE || 
+                                 ', Nombre de la Especie: ' || v_row.NOMBRE_ESPECIE);
+        END LOOP;
+
+    ELSIF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de Especie
+        INSERT INTO LAROATLB_ESPECIE (
+            NOMBRE_ESPECIE
+        ) VALUES (
+            p_nombre_especie
+        );
+        DBMS_OUTPUT.PUT_LINE('Especie insertada correctamente.');
+
+    ELSIF UPPER(p_operacion) = 'U' THEN
+        -- Verificar existencia de la especie
+        OPEN c_especie(p_id_especie);
+        FETCH c_especie INTO v_existente;
+        IF c_especie%FOUND THEN
+            -- Actualización de Especie
+            UPDATE LAROATLB_ESPECIE
+            SET NOMBRE_ESPECIE = p_nombre_especie
+            WHERE ID_ESPECIE = p_id_especie;
+            DBMS_OUTPUT.PUT_LINE('Especie actualizada correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró la especie con el ID proporcionado.');
+        END IF;
+        CLOSE c_especie;
+
+    ELSIF UPPER(p_operacion) = 'D' THEN
+        -- Verificar existencia de la especie
+        OPEN c_especie(p_id_especie);
+        FETCH c_especie INTO v_existente;
+        IF c_especie%FOUND THEN
+            -- Eliminación de Especie
+            DELETE FROM LAROATLB_ESPECIE
+            WHERE ID_ESPECIE = p_id_especie;
+            DBMS_OUTPUT.PUT_LINE('Especie eliminada correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró la especie con el ID proporcionado.');
+        END IF;
+        CLOSE c_especie;
+
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+    END IF;
+
+    -- Confirmar la transacción
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Ocurrió un error: ' || SQLERRM);
+END;
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE MASCOTA
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_MASCOTAS (
+    p_operacion      VARCHAR2,
+    p_id_mascota     NUMBER DEFAULT NULL,
+    p_nombre_mascota VARCHAR2 DEFAULT NULL,
+    p_edad           NUMBER DEFAULT NULL,
+    p_id_cliente     NUMBER DEFAULT NULL,
+    p_id_raza        NUMBER DEFAULT NULL
+)
+IS
+    -- Cursor para verificar si una mascota existe
+    CURSOR c_mascota (id_mascota NUMBER) IS
+        SELECT ID_MASCOTA
+        FROM LAROATLB_MASCOTA
+        WHERE ID_MASCOTA = id_mascota;
+
+    -- Cursor para mostrar todas las mascotas con su raza y cliente asociados
+    CURSOR c_mascotas_all IS
+        SELECT m.ID_MASCOTA, m.NOMBRE, m.EDAD, c.NOMBRE_CLIENTE, r.NOMBRE_RAZA
+        FROM LAROATLB_MASCOTA m
+        JOIN LAROATLB_CLIENTE c ON m.ID_CLIENTE = c.ID_CLIENTE
+        JOIN LAROATLB_RAZA r ON m.ID_RAZA = r.ID_RAZA;
+
+    v_existente c_mascota%ROWTYPE; -- Variable para manejar datos del cursor
+BEGIN
+    LOCK TABLE LAROATLB_MASCOTA IN ROW EXCLUSIVE MODE;
+
+    IF UPPER(p_operacion) = 'R' THEN
+        -- Leer todas las mascotas con su raza y cliente asociados
+        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE MASCOTAS ---');
+        FOR v_row IN c_mascotas_all LOOP
+            DBMS_OUTPUT.PUT_LINE('ID Mascota: ' || v_row.ID_MASCOTA || 
+                                 ', Nombre de la Mascota: ' || v_row.NOMBRE ||
+                                 ', Edad: ' || v_row.EDAD ||
+                                 ', Nombre del Cliente: ' || v_row.NOMBRE_CLIENTE ||
+                                 ', Nombre de la Raza: ' || v_row.NOMBRE_RAZA);
+        END LOOP;
+
+    ELSIF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de Mascota
+        INSERT INTO LAROATLB_MASCOTA (
+            NOMBRE,
+            EDAD,
+            ID_CLIENTE,
+            ID_RAZA
+        ) VALUES (
+            p_nombre_mascota,
+            p_edad,
+            p_id_cliente,
+            p_id_raza
+        );
+        DBMS_OUTPUT.PUT_LINE('Mascota insertada correctamente.');
+
+    ELSIF UPPER(p_operacion) = 'U' THEN
+        -- Verificar existencia de la mascota
+        OPEN c_mascota(p_id_mascota);
+        FETCH c_mascota INTO v_existente;
+        IF c_mascota%FOUND THEN
+            -- Actualización de Mascota
+            UPDATE LAROATLB_MASCOTA
+            SET NOMBRE = p_nombre_mascota,
+                EDAD = p_edad,
+                ID_CLIENTE = p_id_cliente,
+                ID_RAZA = p_id_raza
+            WHERE ID_MASCOTA = p_id_mascota;
+            DBMS_OUTPUT.PUT_LINE('Mascota actualizada correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró la mascota con el ID proporcionado.');
+        END IF;
+        CLOSE c_mascota;
+
+    ELSIF UPPER(p_operacion) = 'D' THEN
+        -- Verificar existencia de la mascota
+        OPEN c_mascota(p_id_mascota);
+        FETCH c_mascota INTO v_existente;
+        IF c_mascota%FOUND THEN
+            -- Eliminación de Mascota
+            DELETE FROM LAROATLB_MASCOTA
+            WHERE ID_MASCOTA = p_id_mascota;
+            DBMS_OUTPUT.PUT_LINE('Mascota eliminada correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró la mascota con el ID proporcionado.');
+        END IF;
+        CLOSE c_mascota;
+
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+    END IF;
+
+    -- Confirmar la transacción
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Ocurrió un error: ' || SQLERRM);
+END;
 
 
 ------------------------------------------------------------------------------------------------------------------------------
