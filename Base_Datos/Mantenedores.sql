@@ -1,6 +1,6 @@
 
 -- MANTENEDOR PARA VETERINARIO
-create or replace PROCEDURE GESTIONAR_VETERINARIOS(
+create or replace PROCEDURE GESTIONAR_VETERINARIOS (
     p_operacion  VARCHAR2,
     p_id_veterinario  NUMBER DEFAULT NULL,
     p_nombre VARCHAR2 DEFAULT NULL,
@@ -10,6 +10,7 @@ create or replace PROCEDURE GESTIONAR_VETERINARIOS(
     p_telefono  NUMBER DEFAULT NULL
 ) 
 IS
+    NUEVO_CORREO VARCHAR2(100);
     -- Cursor para verificar si un veterinario existe
     CURSOR c_veterinario (id_vet NUMBER) IS
         SELECT ID_VETERINARIO
@@ -19,12 +20,14 @@ IS
     v_existente c_veterinario%ROWTYPE; -- Variable para manejar datos del cursor
 BEGIN
     LOCK TABLE LAROATLB_VETERINARIO IN ROW EXCLUSIVE MODE;
+    NUEVO_CORREO := LAROATLB_GENERA_CORREO_VETE(p_nombre,p_apellido1,p_apellido2);
+
     IF UPPER(p_operacion) = 'R' THEN
         -- Inserción
         INSERT INTO LAROATLB_VETERINARIO (
             NOMBRE, APELLIDO1, APELLIDO2, ESPECIALIDAD, TELEFONO, EMAIL
         ) VALUES (
-            p_nombre, p_apellido1, p_apellido2, p_especialidad, p_telefono, LAROATLB_GENERA_CORREO_VETE(p_nombre, p_apellido1, p_apellido2)
+            p_nombre, p_apellido1, p_apellido2, p_especialidad, p_telefono, NUEVO_CORREO
         );
         DBMS_OUTPUT.PUT_LINE('Veterinario insertado correctamente.');
 
@@ -40,7 +43,7 @@ BEGIN
                 APELLIDO2 = p_apellido2,
                 ESPECIALIDAD = p_especialidad,
                 TELEFONO = p_telefono,
-                EMAIL = LAROATLB_GENERA_CORREO_VETE(p_nombre, p_apellido1, p_apellido2)
+                EMAIL = NUEVO_CORREO
             WHERE ID_VETERINARIO = p_id_veterinario;
             DBMS_OUTPUT.PUT_LINE('Veterinario actualizado correctamente.');
         ELSE
@@ -72,4 +75,3 @@ EXCEPTION
      WHEN PROGRAM_ERROR THEN
         RAISE_APPLICATION_ERROR(-6501,'ERROR DE PROGRAMA');
 END;
-
