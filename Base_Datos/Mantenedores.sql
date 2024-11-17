@@ -91,24 +91,24 @@ create or replace PROCEDURE GESTIONAR_SECRETARIA (
 IS
     NUEVO_CORREO VARCHAR2(100);
     -- Cursor para verificar si un veterinario existe
-    CURSOR c_veterinario (id_vet NUMBER) IS
+    CURSOR c_secretaria (id_sec NUMBER) IS
         SELECT ID_SECRETARIA
         FROM LAROATLB_SECRETARIA
         WHERE ID_SECRETARIA = id_vet;
 
-    v_existente c_veterinario%ROWTYPE; -- Variable para manejar datos del cursor
+    v_existente c_secretaria%ROWTYPE; -- Variable para manejar datos del cursor
 BEGIN
     LOCK TABLE LAROATLB_SECRETARIA IN ROW EXCLUSIVE MODE;
-    NUEVO_CORREO := LAROATLB_GENERA_CORREO_VETE(p_nombre,p_apellido1,p_apellido2);
+    NUEVO_CORREO := LAROATLB_GENERA_CORREO_SECRE(p_nombre,p_apellido1,p_apellido2);
 
     IF UPPER(p_operacion) = 'R' THEN
         -- Inserción
-        INSERT INTO LAROATLB_VETERINARIO (
+        INSERT INTO LAROATLB_SECRETARIA (
             NOMBRE, APELLIDO1, APELLIDO2, ESPECIALIDAD, TELEFONO, EMAIL
         ) VALUES (
             p_nombre, p_apellido1, p_apellido2, p_especialidad, p_telefono, NUEVO_CORREO
         );
-        DBMS_OUTPUT.PUT_LINE('Veterinario insertado correctamente.');
+        DBMS_OUTPUT.PUT_LINE('Secretaria insertada correctamente.');
 
     ELSIF UPPER(p_operacion) = 'U' THEN
         -- Verificar existencia
