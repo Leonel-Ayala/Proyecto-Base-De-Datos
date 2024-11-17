@@ -460,3 +460,99 @@ END;
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 -- MANTENEDOR DE CALLES CLIENTE
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CALLES (
+    p_operacion      VARCHAR2,
+    p_id_calle       NUMBER DEFAULT NULL,
+    p_nombre_calle   VARCHAR2 DEFAULT NULL,
+    p_numero_calle   NUMBER DEFAULT NULL,
+    p_id_comuna      NUMBER DEFAULT NULL
+)
+IS
+    -- Cursor para verificar si una calle existe
+    CURSOR c_calle (id_calle NUMBER) IS
+        SELECT ID_CALLE
+        FROM LAROATLB_CALLE_CLIENTE
+        WHERE ID_CALLE = id_calle;
+
+    -- Cursor para mostrar todas las calles o filtradas por ID_COMUNA si se proporciona
+    CURSOR c_calles_all (id_comuna NUMBER) IS
+        SELECT c.ID_CALLE, c.NOMBRE_CALLE, c.NUMERO_CALLE, com.NOMBRE_COMUNA, reg.NOMBRE_REGION
+        FROM LAROATLB_CALLE_CLIENTE c
+        JOIN LAROATLB_COMUNA_CLIENTE com ON c.ID_COMUNA = com.ID_COMUNA
+        JOIN LAROATLB_REGION_CLIENTE reg ON com.ID_REGION = reg.ID_REGION
+        WHERE (id_comuna IS NULL OR c.ID_COMUNA = id_comuna);  -- Filtro por ID_COMUNA, si se proporciona
+
+    v_existente c_calle%ROWTYPE; -- Variable para manejar datos del cursor
+BEGIN
+    LOCK TABLE LAROATLB_CALLE_CLIENTE IN ROW EXCLUSIVE MODE;
+
+    IF UPPER(p_operacion) = 'R' THEN
+        -- Leer todos los registros o filtrados por comuna
+        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE CALLES ---');
+        FOR v_row IN c_calles_all(p_id_comuna) LOOP
+            DBMS_OUTPUT.PUT_LINE('ID Calle: ' || v_row.ID_CALLE || 
+                                 ', Nombre de la Calle: ' || v_row.NOMBRE_CALLE ||
+                                 ', Número de la Calle: ' || v_row.NUMERO_CALLE ||
+                                 ', Nombre de la Comuna: ' || v_row.NOMBRE_COMUNA ||
+                                 ', Nombre de la Región: ' || v_row.NOMBRE_REGION);
+        END LOOP;
+
+    ELSIF UPPER(p_operacion) = 'C' THEN
+        -- Inserción
+        INSERT INTO LAROATLB_CALLE_CLIENTE (
+            NOMBRE_CALLE,
+            NUMERO_CALLE,
+            ID_COMUNA
+        ) VALUES (
+            p_nombre_calle,
+            p_numero_calle,
+            p_id_comuna
+        );
+        DBMS_OUTPUT.PUT_LINE('Calle insertada correctamente.');
+
+    ELSIF UPPER(p_operacion) = 'U' THEN
+        -- Verificar existencia
+        OPEN c_calle(p_id_calle);
+        FETCH c_calle INTO v_existente;
+        IF c_calle%FOUND THEN
+            -- Actualización
+            UPDATE LAROATLB_CALLE_CLIENTE
+            SET NOMBRE_CALLE = p_nombre_calle,
+                NUMERO_CALLE = p_numero_calle,
+                ID_COMUNA = p_id_comuna
+            WHERE ID_CALLE = p_id_calle;
+            DBMS_OUTPUT.PUT_LINE('Calle actualizada correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró la calle con el ID proporcionado.');
+        END IF;
+        CLOSE c_calle;
+
+    ELSIF UPPER(p_operacion) = 'D' THEN
+        -- Verificar existencia
+        OPEN c_calle(p_id_calle);
+        FETCH c_calle INTO v_existente;
+        IF c_calle%FOUND THEN
+            -- Eliminación
+            DELETE FROM LAROATLB_CALLE_CLIENTE
+            WHERE ID_CALLE = p_id_calle;
+            DBMS_OUTPUT.PUT_LINE('Calle eliminada correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró la calle con el ID proporcionado.');
+        END IF;
+        CLOSE c_calle;
+
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+    END IF;
+
+    -- Confirmar la transacción
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Ocurrió un error: ' || SQLERRM);
+END;
+
+------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------
+--MANTENEDOR DE MASCOTA
+
