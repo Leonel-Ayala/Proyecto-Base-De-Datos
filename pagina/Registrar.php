@@ -1,13 +1,9 @@
-
-
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
             background-image: url("https://cdn.royalcanin-weshare-online.io/zlY7qG0BBKJuub5q1Vk6/v1/59-es-l-golden-running-thinking-getting-dog-beneficios");
@@ -58,27 +54,21 @@
             cursor: pointer;
         }
         button:hover {
-            background-color: #ccc;
+            background-color: #45a049;
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <h2>Iniciar Sesión</h2>
-        <form action="verificar_credenciales.php" method="POST">
-            <div class="input-group">
-                <label for="username">Usuario:</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            <div class="input-group">
-                <label for="password">Contraseña:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit">Ingresar</button>
-        </form>
+<div class="login-container">
+    <h2>Registrar Nuevo Usuario</h2>
+    <form action="secretaria.php" method="POST">
+    <div class="input-group">
+        <label for="username">Usuario:</label>
+        <input type="text" id="username" name="username" required>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
-
-
+    <div class="input-group">
+        <label for="password">Contraseña:</label>
+        <input type="password" id="password" name="password" required>
+    </div>
+    <button type="submit" class="b">Ingresar</button>
+</form>
