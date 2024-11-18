@@ -1,88 +1,91 @@
 <?php
-// Incluir la conexión a la base de datos
+// Incluye tu archivo de conexión a la base de datos
 include('conexion.php');
 
-// Variables para operaciones
-$operacion = isset($_POST['operacion']) ? $_POST['operacion'] : '';
-$id_tratamiento = isset($_POST['id_tratamiento']) ? $_POST['id_tratamiento'] : '';
-$descripcion = isset($_POST['descripcion']) ? $_POST['descripcion'] : '';
-$fecha = isset($_POST['fecha']) ? $_POST['fecha'] : '';
-$id_mascota = isset($_POST['id_mascota']) ? $_POST['id_mascota'] : '';
-$id_veterinario = isset($_POST['id_veterinario']) ? $_POST['id_veterinario'] : '';
+// Acción que se tomará según el botón presionado
+$accion = isset($_POST['accion']) ? $_POST['accion'] : '';
 
-// Preparar el procedimiento almacenado
-$stid = oci_parse($conn, 'BEGIN LAROATLB_GESTIONAR_TRATAMIENTOS(:operacion, :id_tratamiento, :descripcion, :fecha, :id_mascota, :id_veterinario); END;');
+// Cuando el usuario selecciona "Ver Tratamientos"
+if ($accion == 'R') {
+    // Llamar al procedimiento para consultar tratamientos
+    $sql = "BEGIN LAROATLB_GESTIONAR_TRATAMIENTOS('R'); END;";
+    $stmt = oci_parse($conn, $sql);
+    oci_execute($stmt);
 
-// Bind de los parámetros
-oci_bind_by_name($stid, ':operacion', $operacion);
-oci_bind_by_name($stid, ':id_tratamiento', $id_tratamiento);
-oci_bind_by_name($stid, ':descripcion', $descripcion);
-oci_bind_by_name($stid, ':fecha', $fecha);
-oci_bind_by_name($stid, ':id_mascota', $id_mascota);
-oci_bind_by_name($stid, ':id_veterinario', $id_veterinario);
+    // Mostrar resultados del procedimiento
+    echo "<h3>Listado de Tratamientos</h3>";
+    echo "<table border='1'>
+            <tr>
+                <th>ID Tratamiento</th>
+                <th>Descripción</th>
+                <th>Fecha</th>
+                <th>ID Mascota</th>
+                <th>ID Veterinario</th>
+            </tr>";
 
-// Ejecutar la operación
-oci_execute($stid);
-
-// Mostrar los tratamientos en caso de 'R'
-if ($operacion == 'R') {
-    echo "<h2>Tratamientos de la Mascota con ID $id_mascota</h2>";
-    echo "<table border='1'>";
-    echo "<tr><th>ID Tratamiento</th><th>Descripción</th><th>Fecha</th><th>Mascota</th><th>Veterinario</th></tr>";
-
-    // Mostrar resultados
-    while ($row = oci_fetch_assoc($stid)) {
-        echo "<tr>";
-        echo "<td>" . $row['ID_TRATAMIENTO'] . "</td>";
-        echo "<td>" . $row['DESCRIPCION'] . "</td>";
-        echo "<td>" . $row['FECHA'] . "</td>";
-        echo "<td>" . $row['NOMBRE_MASCOTA'] . "</td>";
-        echo "<td>" . $row['NOMBRE_VETERINARIO'] . "</td>";
-        echo "</tr>";
+    // Imprimir los datos en una tabla
+    while ($row = oci_fetch_assoc($stmt)) {
+        echo "<tr>
+                <td>" . $row['ID_TRATAMIENTO'] . "</td>
+                <td>" . $row['DESCRIPCION'] . "</td>
+                <td>" . $row['FECHA'] . "</td>
+                <td>" . $row['ID_MASCOTA'] . "</td>
+                <td>" . $row['ID_VETERINARIO'] . "</td>
+              </tr>";
     }
-
     echo "</table>";
 }
 
-// Formularios para crear, actualizar o eliminar
-if ($operacion == 'C' || $operacion == 'U' || $operacion == 'D') {
-    echo "<h2>Formulario para $operacion Tratamiento</h2>";
+// Cuando el usuario selecciona "Agregar Tratamiento"
+elseif ($accion == 'C') {
+    // Si se ha enviado el formulario con los datos del nuevo tratamiento
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $descripcion = $_POST['descripcion'];
+        $fecha = $_POST['fecha'];
+        $id_mascota = $_POST['id_mascota'];
+        $id_veterinario = $_POST['id_veterinario'];
 
-    if ($operacion == 'C') {
-        echo "<form method='POST'>
-                Descripción: <input type='text' name='descripcion' required><br>
-                Fecha: <input type='date' name='fecha' required><br>
-                ID Mascota: <input type='number' name='id_mascota' required><br>
-                ID Veterinario: <input type='number' name='id_veterinario' required><br>
-                <input type='hidden' name='operacion' value='C'>
-                <input type='submit' value='Crear Tratamiento'>
-              </form>";
+        // Llamar al procedimiento para agregar un nuevo tratamiento
+        $sql = "BEGIN LAROATLB_GESTIONAR_TRATAMIENTOS('C', NULL, :descripcion, :fecha, :id_mascota, :id_veterinario); END;";
+        $stmt = oci_parse($conn, $sql);
+        oci_bind_by_name($stmt, ':descripcion', $descripcion);
+        oci_bind_by_name($stmt, ':fecha', $fecha);
+        oci_bind_by_name($stmt, ':id_mascota', $id_mascota);
+        oci_bind_by_name($stmt, ':id_veterinario', $id_veterinario);
+        oci_execute($stmt);
+
+        echo "<p>Tratamiento agregado correctamente.</p>";
     }
 
-    if ($operacion == 'U' || $operacion == 'D') {
-        echo "<form method='POST'>
-                ID Tratamiento: <input type='number' name='id_tratamiento' required><br>";
-        if ($operacion == 'U') {
-            echo "Descripción: <input type='text' name='descripcion'><br>
-                  Fecha: <input type='date' name='fecha'><br>
-                  ID Mascota: <input type='number' name='id_mascota'><br>
-                  ID Veterinario: <input type='number' name='id_veterinario'><br>";
-        }
-        echo "<input type='hidden' name='operacion' value='$operacion'>
-              <input type='submit' value='" . ($operacion == 'U' ? 'Actualizar' : 'Eliminar') . "'>
-              </form>";
-    }
+    // Formulario para agregar tratamiento
+    echo '<form method="POST" action="">
+            <label>Descripción:</label><br><input type="text" name="descripcion" required><br>
+            <label>Fecha:</label><br><input type="date" name="fecha" required><br>
+            <label>ID Mascota:</label><br><input type="number" name="id_mascota" required><br>
+            <label>ID Veterinario:</label><br><input type="number" name="id_veterinario" required><br>
+            <button type="submit">Agregar Tratamiento</button>
+        </form>';
 }
 
-// Liberar recursos y cerrar la conexión
-oci_free_statement($stid);
-oci_close($conn);
+// Cuando el usuario selecciona "Actualizar Tratamiento"
+elseif ($accion == 'U') {
+    // Aquí se podrá manejar la actualización (similar a lo anterior)
+    echo "<h3>Actualizar Tratamiento</h3>";
+    // Procesar formulario para actualizar tratamiento con ID
+}
+
+// Cuando el usuario selecciona "Eliminar Tratamiento"
+elseif ($accion == 'D') {
+    // Aquí se podrá manejar la eliminación
+    echo "<h3>Eliminar Tratamiento</h3>";
+    // Procesar formulario para eliminar tratamiento con ID
+}
 ?>
 
-<!-- Botones para CRUD -->
+<!-- Botones para accionar las operaciones CRUD -->
 <form method="POST">
-    <input type="submit" name="operacion" value="R" />
-    <input type="submit" name="operacion" value="C" />
-    <input type="submit" name="operacion" value="U" />
-    <input type="submit" name="operacion" value="D" />
+    <button name="accion" value="R">Ver Tratamientos</button>
+    <button name="accion" value="C">Agregar Tratamiento</button>
+    <button name="accion" value="U">Actualizar Tratamiento</button>
+    <button name="accion" value="D">Eliminar Tratamiento</button>
 </form>
