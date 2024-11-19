@@ -2,14 +2,15 @@
 ------------------------------------------------------------------------------------------------------------------------------
 -- MANTENEDOR PARA VETERINARIO
 CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_VETERINARIOS (
-    p_operacion  VARCHAR2,
+    p_operacion       VARCHAR2,
     p_id_veterinario  NUMBER DEFAULT NULL,
-    p_nombre VARCHAR2 DEFAULT NULL,
-    p_apellido1  VARCHAR2 DEFAULT NULL,
-    p_apellido2  VARCHAR2 DEFAULT NULL,
-    p_especialidad  VARCHAR2 DEFAULT NULL,
-    p_telefono  NUMBER DEFAULT NULL
-) 
+    p_nombre          VARCHAR2 DEFAULT NULL,
+    p_apellido1       VARCHAR2 DEFAULT NULL,
+    p_apellido2       VARCHAR2 DEFAULT NULL,
+    p_especialidad    VARCHAR2 DEFAULT NULL,
+    p_telefono        NUMBER DEFAULT NULL,
+    p_resultado       OUT SYS_REFCURSOR -- Parámetro de salida para devolver los resultados
+)
 IS
     NUEVO_CORREO VARCHAR2(100);
 
@@ -19,25 +20,19 @@ IS
         FROM LAROATLB_VETERINARIO
         WHERE ID_VETERINARIO = id_vet;
 
-    -- Cursor para mostrar todos los veterinarios (modificado para su uso en PHP)
-    CURSOR c_veterinarios_all IS
-        SELECT ID_VETERINARIO, NOMBRE, APELLIDO1, APELLIDO2, ESPECIALIDAD, TELEFONO, EMAIL
-        FROM LAROATLB_VETERINARIO;
-
-    v_existente c_veterinario%ROWTYPE; -- Variable para manejar datos del cursor
 BEGIN
     LOCK TABLE LAROATLB_VETERINARIO IN ROW EXCLUSIVE MODE;
     NUEVO_CORREO := LAROATLB_GENERA_CORREO_VETE(p_nombre, p_apellido1, p_apellido2);
 
     IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todos los registros y retornar resultados en formato adecuado para PHP
-        FOR v_row IN c_veterinarios_all LOOP
-            -- Aquí se puede utilizar un método para almacenar los resultados en una tabla de PHP o JSON
-            -- Los siguientes PRINT están en formato adecuado para ser interpretados por PHP
-            DBMS_OUTPUT.PUT_LINE(v_row.ID_VETERINARIO || '|' || 
-                                 v_row.NOMBRE || ' ' || v_row.APELLIDO1 || ' ' || v_row.APELLIDO2 || '|' || 
-                                 v_row.ESPECIALIDAD || '|' || v_row.TELEFONO || '|' || v_row.EMAIL);
-        END LOOP;
+        -- Abrir un cursor de referencia y devolver todos los datos
+        OPEN p_resultado FOR
+            SELECT ID_VETERINARIO, 
+                   NOMBRE || ' ' || APELLIDO1 || ' ' || APELLIDO2 AS NOMBRE_COMPLETO, 
+                   ESPECIALIDAD, 
+                   TELEFONO, 
+                   EMAIL
+            FROM LAROATLB_VETERINARIO;
 
     ELSIF UPPER(p_operacion) = 'C' THEN
         -- Inserción
@@ -49,48 +44,32 @@ BEGIN
         DBMS_OUTPUT.PUT_LINE('Veterinario insertado correctamente.');
 
     ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar existencia
-        OPEN c_veterinario(p_id_veterinario);
-        FETCH c_veterinario INTO v_existente;
-        IF c_veterinario%FOUND THEN
-            -- Actualización
-            UPDATE LAROATLB_VETERINARIO
-            SET NOMBRE = p_nombre,
-                APELLIDO1 = p_apellido1,
-                APELLIDO2 = p_apellido2,
-                ESPECIALIDAD = p_especialidad,
-                TELEFONO = p_telefono,
-                EMAIL = NUEVO_CORREO
-            WHERE ID_VETERINARIO = p_id_veterinario;
-            DBMS_OUTPUT.PUT_LINE('Veterinario actualizado correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró el veterinario con el ID proporcionado.');
-        END IF;
-        CLOSE c_veterinario;
+        -- Actualización
+        UPDATE LAROATLB_VETERINARIO
+        SET NOMBRE = p_nombre,
+            APELLIDO1 = p_apellido1,
+            APELLIDO2 = p_apellido2,
+            ESPECIALIDAD = p_especialidad,
+            TELEFONO = p_telefono,
+            EMAIL = NUEVO_CORREO
+        WHERE ID_VETERINARIO = p_id_veterinario;
+        DBMS_OUTPUT.PUT_LINE('Veterinario actualizado correctamente.');
 
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar existencia
-        OPEN c_veterinario(p_id_veterinario);
-        FETCH c_veterinario INTO v_existente;
-        IF c_veterinario%FOUND THEN
-            -- Eliminación
-            DELETE FROM LAROATLB_VETERINARIO
-            WHERE ID_VETERINARIO = p_id_veterinario;
-            DBMS_OUTPUT.PUT_LINE('Veterinario eliminado correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró el veterinario con el ID proporcionado.');
-        END IF;
-        CLOSE c_veterinario;
+        -- Eliminación
+        DELETE FROM LAROATLB_VETERINARIO
+        WHERE ID_VETERINARIO = p_id_veterinario;
+        DBMS_OUTPUT.PUT_LINE('Veterinario eliminado correctamente.');
 
     ELSE
         DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
     END IF;
 
-    -- Confirmar la transacción (en caso de no estar en modo automático)
+    -- Confirmar la transacción
     COMMIT;
 EXCEPTION
-    WHEN PROGRAM_ERROR THEN
-        RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Ocurrió un error: ' || SQLERRM);
 END;
 
 
