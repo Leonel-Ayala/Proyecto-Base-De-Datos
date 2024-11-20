@@ -766,7 +766,7 @@ IS
 
     -- Cursor para mostrar todas las mascotas con su raza y cliente asociados
     CURSOR c_mascotas_all IS
-        SELECT m.ID_MASCOTA, m.NOMBRE, m.EDAD, c.NOMBRE_CLIENTE, r.NOMBRE_RAZA
+        SELECT m.ID_MASCOTA, m.NOMBRE AS NOMNRE_MASCOTA, m.EDAD, c.NOMBRE AS NOMBRE_CLIENTE, r.NOMBRE_RAZA
         FROM LAROATLB_MASCOTA m
         JOIN LAROATLB_CLIENTE c ON m.ID_CLIENTE = c.ID_CLIENTE
         JOIN LAROATLB_RAZA r ON m.ID_RAZA = r.ID_RAZA;
