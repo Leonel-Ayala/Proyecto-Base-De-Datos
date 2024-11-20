@@ -3,28 +3,18 @@
 -- MANTENEDOR PARA VETERINARIO
 
 CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_VETERINARIOS (
-    p_operacion  VARCHAR2,
+    p_operacion       VARCHAR2,
     p_id_veterinario  NUMBER DEFAULT NULL,
-    p_nombre VARCHAR2 DEFAULT NULL,
-    p_apellido1  VARCHAR2 DEFAULT NULL,
-    p_apellido2  VARCHAR2 DEFAULT NULL,
-    p_especialidad  VARCHAR2 DEFAULT NULL,
-    p_telefono  NUMBER DEFAULT NULL,
-    p_cursor OUT SYS_REFCURSOR  -- Devuelve un cursor
+    p_nombre          VARCHAR2 DEFAULT NULL,
+    p_apellido1       VARCHAR2 DEFAULT NULL,
+    p_apellido2       VARCHAR2 DEFAULT NULL,
+    p_especialidad    VARCHAR2 DEFAULT NULL,
+    p_telefono        NUMBER DEFAULT NULL
 ) 
 IS
     NUEVO_CORREO VARCHAR2(100);
-
-    CURSOR c_veterinarios_all IS
-        SELECT ID_VETERINARIO, NOMBRE, APELLIDO1, APELLIDO2, ESPECIALIDAD, TELEFONO, EMAIL
-        FROM LAROATLB_VETERINARIO;
 BEGIN
-    -- Si la operación es 'R', abrir el cursor para devolver los resultados
-    IF UPPER(p_operacion) = 'R' THEN
-        OPEN p_cursor FOR
-            SELECT ID_VETERINARIO, NOMBRE, APELLIDO1, APELLIDO2, ESPECIALIDAD, TELEFONO, EMAIL
-            FROM LAROATLB_VETERINARIO;
-    ELSIF UPPER(p_operacion) = 'C' THEN
+    IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de nuevo veterinario
         NUEVO_CORREO := LAROATLB_GENERA_CORREO_VETE(p_nombre, p_apellido1, p_apellido2);
         INSERT INTO LAROATLB_VETERINARIO (
@@ -39,18 +29,30 @@ BEGIN
             APELLIDO1 = p_apellido1,
             APELLIDO2 = p_apellido2,
             ESPECIALIDAD = p_especialidad,
-            TELEFONO = p_telefono,
-            EMAIL = NUEVO_CORREO
+            TELEFONO = p_telefono
         WHERE ID_VETERINARIO = p_id_veterinario;
     ELSIF UPPER(p_operacion) = 'D' THEN
         -- Eliminación de veterinario
         DELETE FROM LAROATLB_VETERINARIO WHERE ID_VETERINARIO = p_id_veterinario;
     END IF;
-    
+
     COMMIT;
 EXCEPTION
     WHEN PROGRAM_ERROR THEN
         RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
+END;
+
+------------------------
+--CURSOR LISTAR VETERINARIO
+
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_VETERINARIOS (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_VETERINARIO, NOMBRE, APELLIDO1, APELLIDO2, ESPECIALIDAD, TELEFONO, EMAIL
+        FROM LAROATLB_VETERINARIO;
 END;
 
 ------------------------------------------------------------------------------------------------------------------------------
