@@ -70,39 +70,18 @@ IS
     NUEVO_CORREO VARCHAR2(100);
 
     -- Cursor para verificar si una secretaria existe
-    CURSOR c_secretaria (id_sec NUMBER) IS
-        SELECT ID_SECRE
-        FROM LAROATLB_SECRETARIA
-        WHERE ID_SECRE = id_sec;
-
-    -- Cursor para mostrar todas las secretarias
-    CURSOR c_secretarias_all IS
-        SELECT ID_SECRE, NOMBRE, APELLIDO1, APELLIDO2, TELEFONO, EMAIL
-        FROM LAROATLB_SECRETARIA;
-
-    v_existente c_secretaria%ROWTYPE; -- Variable para manejar datos del cursor
+    
 BEGIN
     LOCK TABLE LAROATLB_SECRETARIA IN ROW EXCLUSIVE MODE;
-    NUEVO_CORREO := LAROATLB_GENERA_CORREO_SECRE(p_nombre, p_apellido1, p_apellido2);
 
-    IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todos los registros
-        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE SECRETARIAS ---');
-        FOR v_row IN c_secretarias_all LOOP
-            DBMS_OUTPUT.PUT_LINE('ID: ' || v_row.ID_SECRE || 
-                                 ', Nombre: ' || v_row.NOMBRE || ' ' || v_row.APELLIDO1 || ' ' || v_row.APELLIDO2 || 
-                                 ', Teléfono: ' || v_row.TELEFONO || 
-                                 ', Email: ' || v_row.EMAIL);
-        END LOOP;
-
-    ELSIF UPPER(p_operacion) = 'C' THEN
+    IF UPPER(p_operacion) = 'C' THEN
         -- Inserción
+        NUEVO_CORREO := LAROATLB_GENERA_CORREO_SECRE(p_nombre, p_apellido1, p_apellido2);
         INSERT INTO LAROATLB_SECRETARIA (
             NOMBRE, APELLIDO1, APELLIDO2, TELEFONO, EMAIL
         ) VALUES (
             p_nombre, p_apellido1, p_apellido2, p_telefono, NUEVO_CORREO
         );
-        DBMS_OUTPUT.PUT_LINE('Secretaria insertada correctamente.');
 
     ELSIF UPPER(p_operacion) = 'U' THEN
         -- Verificar existencia
@@ -110,6 +89,7 @@ BEGIN
         FETCH c_secretaria INTO v_existente;
         IF c_secretaria%FOUND THEN
             -- Actualización
+            NUEVO_CORREO := LAROATLB_GENERA_CORREO_SECRE(p_nombre, p_apellido1, p_apellido2);
             UPDATE LAROATLB_SECRETARIA
             SET NOMBRE = p_nombre,
                 APELLIDO1 = p_apellido1,
@@ -117,9 +97,8 @@ BEGIN
                 TELEFONO = p_telefono,
                 EMAIL = NUEVO_CORREO
             WHERE ID_SECRE = p_id_secretaria;
-            DBMS_OUTPUT.PUT_LINE('Secretaria actualizada correctamente.');
         ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la secretaria con el ID proporcionado.');
+            RAISE_APPLICATION_ERROR(-20001, 'No se encontró la secretaria con el ID proporcionado.');
         END IF;
         CLOSE c_secretaria;
 
@@ -131,22 +110,32 @@ BEGIN
             -- Eliminación
             DELETE FROM LAROATLB_SECRETARIA
             WHERE ID_SECRE = p_id_secretaria;
-            DBMS_OUTPUT.PUT_LINE('Secretaria eliminada correctamente.');
         ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la secretaria con el ID proporcionado.');
+            RAISE_APPLICATION_ERROR(-20002, 'No se encontró la secretaria con el ID proporcionado.');
         END IF;
         CLOSE c_secretaria;
 
     ELSE
-        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+        RAISE_APPLICATION_ERROR(-20003, 'Operación no reconocida. Use "C", "U" o "D".');
     END IF;
 
-    -- Confirmar la transacción (en caso de no estar en modo automático)
+    -- Confirmar la transacción
     COMMIT;
 EXCEPTION
-    
     WHEN PROGRAM_ERROR THEN
         RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
+END;
+------------------------
+--- CURSOR PARA LISTAR SECRE
+
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_SECRETARIAS (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_SECRE, NOMBRE, APELLIDO1, APELLIDO2, TELEFONO, EMAIL
+        FROM LAROATLB_SECRETARIA;
 END;
 
 ------------------------------------------------------------------------------------------------------------------------------
