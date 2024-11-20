@@ -291,53 +291,62 @@ END;
 
 --MANTENEDOR DE REGION
 
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_REGIONES (
-    p_operacion      VARCHAR2,
-    p_id_region      NUMBER DEFAULT NULL,
-    p_nombre_region  VARCHAR2 DEFAULT NULL
-)
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_REGION_CLIENTE (
+    p_operacion    VARCHAR2,
+    p_id_region    NUMBER DEFAULT NULL,
+    p_nombre_region VARCHAR2 DEFAULT NULL
+) 
 IS
-    -- Cursor para verificar si una región existe
-    CURSOR c_region (id_reg NUMBER) IS
-        SELECT ID_Region
-        FROM LAROATLB_Region_Cliente
-        WHERE ID_Region = id_reg;
+    -- Cursor para verificar si existe una región
+    CURSOR c_region (id_region NUMBER) IS
+        SELECT ID_REGION
+        FROM LAROATLB_REGION_CLIENTE
+        WHERE ID_REGION = id_region;
 
     -- Cursor para mostrar todas las regiones
     CURSOR c_regiones_all IS
-        SELECT ID_Region, Nombre_Region
-        FROM LAROATLB_Region_Cliente;
+        SELECT ID_REGION, NOMBRE_REGION
+        FROM LAROATLB_REGION_CLIENTE;
 
     v_existente c_region%ROWTYPE; -- Variable para manejar datos del cursor
+
 BEGIN
-    LOCK TABLE LAROATLB_Region_Cliente IN ROW EXCLUSIVE MODE;
+    LOCK TABLE LAROATLB_REGION_CLIENTE IN ROW EXCLUSIVE MODE;
 
     IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todos los registros
+        -- Leer todas las regiones
         DBMS_OUTPUT.PUT_LINE('--- LISTADO DE REGIONES ---');
         FOR v_row IN c_regiones_all LOOP
-            DBMS_OUTPUT.PUT_LINE('ID Región: ' || v_row.ID_Region || 
-                                 ', Nombre de la Región: ' || v_row.Nombre_Region);
+            DBMS_OUTPUT.PUT_LINE('ID Región: ' || v_row.ID_REGION || 
+                                 ', Nombre Región: ' || v_row.NOMBRE_REGION);
         END LOOP;
 
     ELSIF UPPER(p_operacion) = 'C' THEN
-        -- Inserción
-        INSERT INTO LAROATLB_Region_Cliente (
-            Nombre_Region
-        ) VALUES (
-            p_nombre_region
-        );
-        DBMS_OUTPUT.PUT_LINE('Región insertada correctamente.');
-
-    ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar existencia
+        -- Inserción de una nueva región
+        -- Verificamos si ya existe la región
         OPEN c_region(p_id_region);
         FETCH c_region INTO v_existente;
         IF c_region%FOUND THEN
-            -- Actualización
-            UPDATE LAROATLB_Region_Cliente
-            SET Nombre_Region = p_nombre_region
-            WHERE ID_Region = p_id_region;
+            DBMS_OUTPUT.PUT_LINE('La región con este ID ya existe.');
+        ELSE
+            INSERT INTO LAROATLB_REGION_CLIENTE (
+                ID_REGION, NOMBRE_REGION
+            ) VALUES (
+                p_id_region, p_nombre_region
+            );
+            DBMS_OUTPUT.PUT_LINE('Región insertada correctamente.');
+        END IF;
+        CLOSE c_region;
+
+    ELSIF UPPER(p_operacion) = 'U' THEN
+        -- Verificar existencia de la región
+        OPEN c_region(p_id_region);
+        FETCH c_region INTO v_existente;
+        IF c_region%FOUND THEN
+            -- Actualización de la región
+            UPDATE LAROATLB_REGION_CLIENTE
+            SET NOMBRE_REGION = p_nombre_region
+            WHERE ID_REGION = p_id_region;
             DBMS_OUTPUT.PUT_LINE('Región actualizada correctamente.');
         ELSE
             DBMS_OUTPUT.PUT_LINE('No se encontró la región con el ID proporcionado.');
@@ -345,13 +354,13 @@ BEGIN
         CLOSE c_region;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar existencia
+        -- Verificar existencia de la región
         OPEN c_region(p_id_region);
         FETCH c_region INTO v_existente;
         IF c_region%FOUND THEN
-            -- Eliminación
-            DELETE FROM LAROATLB_Region_Cliente
-            WHERE ID_Region = p_id_region;
+            -- Eliminación de la región
+            DELETE FROM LAROATLB_REGION_CLIENTE
+            WHERE ID_REGION = p_id_region;
             DBMS_OUTPUT.PUT_LINE('Región eliminada correctamente.');
         ELSE
             DBMS_OUTPUT.PUT_LINE('No se encontró la región con el ID proporcionado.');
@@ -362,12 +371,14 @@ BEGIN
         DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
     END IF;
 
-    -- Confirmar la transacción
+    -- Confirmar la transacción (en caso de no estar en modo automático)
     COMMIT;
+
 EXCEPTION
-    WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Ocurrió un error: ' || SQLERRM);
+    WHEN PROGRAM_ERROR THEN
+        RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
 END;
+
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
