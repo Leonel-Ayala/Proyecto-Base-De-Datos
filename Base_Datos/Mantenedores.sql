@@ -2,40 +2,73 @@
 ------------------------------------------------------------------------------------------------------------------------------
 -- MANTENEDOR PARA VETERINARIO
 
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_VETERINARIOS (
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_SECRETARIAS (
     p_operacion       VARCHAR2,
-    p_id_veterinario  NUMBER DEFAULT NULL,
+    p_id_secretaria   NUMBER DEFAULT NULL,
     p_nombre          VARCHAR2 DEFAULT NULL,
     p_apellido1       VARCHAR2 DEFAULT NULL,
     p_apellido2       VARCHAR2 DEFAULT NULL,
-    p_especialidad    VARCHAR2 DEFAULT NULL,
     p_telefono        NUMBER DEFAULT NULL
 ) 
 IS
     NUEVO_CORREO VARCHAR2(100);
+
+    -- Cursor para verificar si una secretaria existe
+    CURSOR c_secretaria (id_sec NUMBER) IS
+        SELECT ID_SECRE
+        FROM LAROATLB_SECRETARIA
+        WHERE ID_SECRE = id_sec;
+
+    v_existente c_secretaria%ROWTYPE; -- Variable para manejar datos del cursor
 BEGIN
+    LOCK TABLE LAROATLB_SECRETARIA IN ROW EXCLUSIVE MODE;
+
     IF UPPER(p_operacion) = 'C' THEN
-        -- Inserción de nuevo veterinario
-        NUEVO_CORREO := LAROATLB_GENERA_CORREO_VETE(p_nombre, p_apellido1, p_apellido2);
-        INSERT INTO LAROATLB_VETERINARIO (
-            NOMBRE, APELLIDO1, APELLIDO2, ESPECIALIDAD, TELEFONO, EMAIL
+        -- Inserción
+        NUEVO_CORREO := LAROATLB_GENERA_CORREO_SECRE(p_nombre, p_apellido1, p_apellido2);
+        INSERT INTO LAROATLB_SECRETARIA (
+            NOMBRE, APELLIDO1, APELLIDO2, TELEFONO, EMAIL
         ) VALUES (
-            p_nombre, p_apellido1, p_apellido2, p_especialidad, p_telefono, NUEVO_CORREO
+            p_nombre, p_apellido1, p_apellido2, p_telefono, NUEVO_CORREO
         );
+
     ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Actualización de un veterinario
-        UPDATE LAROATLB_VETERINARIO
-        SET NOMBRE = p_nombre,
-            APELLIDO1 = p_apellido1,
-            APELLIDO2 = p_apellido2,
-            ESPECIALIDAD = p_especialidad,
-            TELEFONO = p_telefono
-        WHERE ID_VETERINARIO = p_id_veterinario;
+        -- Verificar existencia
+        OPEN c_secretaria(p_id_secretaria);
+        FETCH c_secretaria INTO v_existente;
+        IF c_secretaria%FOUND THEN
+            -- Actualización
+            NUEVO_CORREO := LAROATLB_GENERA_CORREO_SECRE(p_nombre, p_apellido1, p_apellido2);
+            UPDATE LAROATLB_SECRETARIA
+            SET NOMBRE = p_nombre,
+                APELLIDO1 = p_apellido1,
+                APELLIDO2 = p_apellido2,
+                TELEFONO = p_telefono,
+                EMAIL = NUEVO_CORREO
+            WHERE ID_SECRE = p_id_secretaria;
+        ELSE
+            RAISE_APPLICATION_ERROR(-20001, 'No se encontró la secretaria con el ID proporcionado.');
+        END IF;
+        CLOSE c_secretaria;
+
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Eliminación de veterinario
-        DELETE FROM LAROATLB_VETERINARIO WHERE ID_VETERINARIO = p_id_veterinario;
+        -- Verificar existencia
+        OPEN c_secretaria(p_id_secretaria);
+        FETCH c_secretaria INTO v_existente;
+        IF c_secretaria%FOUND THEN
+            -- Eliminación
+            DELETE FROM LAROATLB_SECRETARIA
+            WHERE ID_SECRE = p_id_secretaria;
+        ELSE
+            RAISE_APPLICATION_ERROR(-20002, 'No se encontró la secretaria con el ID proporcionado.');
+        END IF;
+        CLOSE c_secretaria;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20003, 'Operación no reconocida. Use "C", "U" o "D".');
     END IF;
 
+    -- Confirmar la transacción
     COMMIT;
 EXCEPTION
     WHEN PROGRAM_ERROR THEN
