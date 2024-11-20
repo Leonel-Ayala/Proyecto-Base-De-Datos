@@ -1,46 +1,58 @@
 <?php
 session_start();
+$host = 'localhost';
+$port = '1521';
+$dbname = 'XE'; 
+$username = 'vetsol';
+$password = 'oracle';
 
-// Define una lista de usuarios autorizados con roles
-$usuarios_validos = [
-    'superadmin' => ['password' => 'superadmin', 'role' => 'super_usuario'],
-    'veterinario' => ['password' => 'veterinario', 'role' => 'veterinario'],
-    'secretaria' => ['password' => 'secretaria', 'role' => 'secretaria']
-];
+try {
+    $dsn = "oci:dbname=//$host:$port/$dbname;charset=UTF8";
+    $conn = new PDO($dsn, $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Error de conexión: " . $e->getMessage());
+}
 
-// Verifica si el formulario fue enviado
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'];
     $password = $_POST['password'];
 
-    // Comprueba si el usuario existe y la contraseña coincide
-    if (isset($usuarios_validos[$username]) && $usuarios_validos[$username]['password'] === $password) {
-        // Establece la sesión del usuario
-        $_SESSION['username'] = $username;
-        $_SESSION['role'] = $usuarios_validos[$username]['role'];
+    // Prepara la consulta SQL
+    $sql = "SELECT ROL_USUARIO FROM LAROATLB_USUARIOS 
+            WHERE NOMBRE_USUARIO=:nombre_usuario 
+            AND CONTRA_USUARIO=:contra_usuario";
+    $stmt = $conn->prepare($sql);
+    $stmt->bindParam(':nombre_usuario', $username);
+    $stmt->bindParam(':contra_usuario', $password);
+    
+    $stmt->execute();
 
-        // Redirige a la página correspondiente según el rol
-        switch ($_SESSION['role']) {
-            case 'super_usuario':
-                header('Location: super_usuario.php');
+    // Verifica si se encontró el usuario
+    if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        // Extrae el rol del usuario
+        $rol_usuario = $row['ROL_USUARIO'];
+
+        // Redirige según el rol
+        switch ($rol_usuario) {
+            case 'ADMIN':
+                header('Location: Super_usuario/Super_Usuario.php');
                 break;
-            case 'veterinario':
-                header('Location: veterinario.php');
+            case 'VETERINARIO':
+                header('Location: Veterinario/borrar.php');
                 break;
-            case 'secretaria':
-                header('Location: secretaria.php');
+            case 'SECRETARIA':
+                header('Location: Secretaria/Secretaria.php');
                 break;
             default:
                 echo "Error: Rol no reconocido.";
-                session_destroy();
         }
     } else {
         // Credenciales incorrectas
         echo "Credenciales incorrectas. <a href='index.php'>Volver al inicio de sesión</a>";
-        exit;
     }
 } else {
-    // Si no se envió el formulario, redirige al formulario de inicio de sesión
     header('Location: index.php');
-    exit;
 }
+?>
+
