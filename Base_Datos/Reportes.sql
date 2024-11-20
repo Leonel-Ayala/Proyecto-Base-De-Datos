@@ -178,6 +178,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_mascota'])) {
 
 --------------------------------------------------------------------------
 
+--- REPORTE PRODUCTOS MAS USADOS
+
+CREATE OR REPLACE PROCEDURE LAROATLB_Reporte_Productos_Mas_Usados (
+    p_cursor OUT SYS_REFCURSOR
+)
+AS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT 
+            P.ID_Producto,
+            P.Nombre_Producto,
+            SUM(DPT.Cantidad) AS Total_Usado
+        FROM 
+            LAROATLB_Producto P
+        JOIN 
+            LAROATLB_Detalle_Producto_Tratamiento DPT
+            ON P.ID_Producto = DPT.ID_Producto
+        GROUP BY 
+            P.ID_Producto, P.Nombre_Producto
+        ORDER BY 
+            Total_Usado DESC;
+END;
+------------------------------------------
+---idea gpt de llamado en pagina web
+
+<?php
+// Conexión a la base de datos Oracle
+$conn = oci_connect('usuario', 'contraseña', 'localhost/XE');
+
+if (!$conn) {
+    $error = oci_error();
+    echo "Error al conectar: " . $error['message'];
+    exit;
+}
+
+// Preparar la llamada al procedimiento
+$sql = 'BEGIN LAROATLB_Reporte_Productos_Mas_Usados(:cursor); END;';
+$stmt = oci_parse($conn, $sql);
+
+// Declarar el cursor de salida
+$cursor = oci_new_cursor($conn);
+
+// Vincular el cursor al procedimiento
+oci_bind_by_name($stmt, ':cursor', $cursor, -1, OCI_B_CURSOR);
+
+// Ejecutar el procedimiento
+if (!oci_execute($stmt)) {
+    $error = oci_error($stmt);
+    echo "Error al ejecutar el procedimiento: " . $error['message'];
+    exit;
+}
+
+// Ejecutar el cursor
+oci_execute($cursor);
+
+// Mostrar los datos en una tabla HTML
+echo "<table border='1'>";
+echo "<tr><th>ID Producto</th><th>Nombre Producto</th><th>Total Usado</th></tr>";
+
+while (($row = oci_fetch_assoc($cursor)) != false) {
+    echo "<tr>";
+    echo "<td>" . htmlspecialchars($row['ID_PRODUCTO']) . "</td>";
+    echo "<td>" . htmlspecialchars($row['NOMBRE_PRODUCTO']) . "</td>";
+    echo "<td>" . htmlspecialchars($row['TOTAL_USADO']) . "</td>";
+    echo "</tr>";
+}
+
+echo "</table>";
+
+// Liberar recursos
+oci_free_statement($stmt);
+oci_free_statement($cursor);
+oci_close($conn);
+?>
+-------------------------------------------------------------------------------------
 
 
 
