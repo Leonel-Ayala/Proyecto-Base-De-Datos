@@ -780,7 +780,7 @@ BEGIN
         DBMS_OUTPUT.PUT_LINE('--- LISTADO DE MASCOTAS ---');
         FOR v_row IN c_mascotas_all LOOP
             DBMS_OUTPUT.PUT_LINE('ID Mascota: ' || v_row.ID_MASCOTA || 
-                                 ', Nombre de la Mascota: ' || v_row.NOMBRE ||
+                                 ', Nombre de la Mascota: ' || v_row.NOMBRE_MASCOTA ||
                                  ', Edad: ' || v_row.EDAD ||
                                  ', Nombre del Cliente: ' || v_row.NOMBRE_CLIENTE ||
                                  ', Nombre de la Raza: ' || v_row.NOMBRE_RAZA);
