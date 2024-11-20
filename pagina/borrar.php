@@ -1,10 +1,9 @@
 <?php 
 $host = 'localhost';
 $port = '1521';
-$dbname = 'XE'; // Cambia según tu configuración
-$username = 'HR';
-$password = '123';
-//include('links.js');
+$dbname = 'XE'; 
+$username = 'vetsol';
+$password = 'oracle';
 
 try {
     $dsn = "oci:dbname=//$host:$port/$dbname;charset=UTF8";
@@ -13,39 +12,93 @@ try {
 } catch (PDOException $e) {
     die("Error de conexión: " . $e->getMessage());
 }
-// Manejar la acción
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'];
+    try {
+        if ($action === 'listar') {
+            $stmt = $conn->prepare("SELECT ID_VETERINARIO, NOMBRE, APELLIDO1, APELLIDO2, ESPECIALIDAD, TELEFONO, EMAIL FROM LAROATLB_VETERINARIO");
+            $stmt->execute();
+            $veterinarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    if ($action === 'insertar') {
-        $area_trabajo = $_POST['area_trabajo'];
-        $stmt = $conn->prepare("BEGIN C_ROLES(:area_trabajo); END;");
-        $stmt->bindParam(':area_trabajo', $area_trabajo);
-        $stmt->execute();
-        echo "Registro insertado exitosamente.";
-    } elseif ($action === 'listar') {
-        $stmt = $conn->query("SELECT ID_ROL, AREA_TRABAJO FROM Roles");
-        echo "<table><tr><th>ID</th><th>Área de Trabajo</th></tr>";
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            echo "<tr><td>{$row['ID_ROL']}</td><td>{$row['AREA_TRABAJO']}</td></tr>";
+            if (empty($veterinarios)) {
+                echo "<p>No hay veterinarios registrados.</p>";
+            } else {
+                echo "<table class='table'>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Apellido 1</th>
+                                <th>Apellido 2</th>
+                                <th>Especialidad</th>
+                                <th>Teléfono</th>
+                                <th>Email</th>
+                            </tr>
+                        </thead>
+                        <tbody>";
+                foreach ($veterinarios as $veterinario) {
+                    echo "<tr>
+                            <td>{$veterinario['ID_VETERINARIO']}</td>
+                            <td>{$veterinario['NOMBRE']}</td>
+                            <td>{$veterinario['APELLIDO1']}</td>
+                            <td>{$veterinario['APELLIDO2']}</td>
+                            <td>{$veterinario['ESPECIALIDAD']}</td>
+                            <td>{$veterinario['TELEFONO']}</td>
+                            <td>{$veterinario['EMAIL']}</td>
+                          </tr>";
+                }
+                echo "</tbody></table>";
+            }
+        } elseif ($action === 'insertar') {
+            $nombre = $_POST['nombre'];
+            $apellido1 = $_POST['apellido1'];
+            $apellido2 = $_POST['apellido2'];
+            $especialidad = $_POST['especialidad'];
+            $telefono = $_POST['telefono'];
+
+            $stmt = $conn->prepare("BEGIN LAROATLB_GESTIONAR_VETERINARIOS('C', NULL, :nombre, :apellido1, :apellido2, :especialidad, :telefono); END;");
+            $stmt->bindParam(':nombre', $nombre);
+            $stmt->bindParam(':apellido1', $apellido1);
+            $stmt->bindParam(':apellido2', $apellido2);
+            $stmt->bindParam(':especialidad', $especialidad);
+            $stmt->bindParam(':telefono', $telefono);
+            $stmt->execute();
+            echo "Veterinario insertado exitosamente.";
+            header("Location: ".$_SERVER['PHP_SELF']); // Redirige para evitar repetir la acción
+            exit();
+        } elseif ($action === 'actualizar') {
+            $id_veterinario = $_POST['id_veterinario'];
+            $nombre = $_POST['nombre'];
+            $apellido1 = $_POST['apellido1'];
+            $apellido2 = $_POST['apellido2'];
+            $especialidad = $_POST['especialidad'];
+            $telefono = $_POST['telefono'];
+
+            $stmt = $conn->prepare("BEGIN LAROATLB_GESTIONAR_VETERINARIOS('U', :id_veterinario, :nombre, :apellido1, :apellido2, :especialidad, :telefono); END;");
+            $stmt->bindParam(':id_veterinario', $id_veterinario);
+            $stmt->bindParam(':nombre', $nombre);
+            $stmt->bindParam(':apellido1', $apellido1);
+            $stmt->bindParam(':apellido2', $apellido2);
+            $stmt->bindParam(':especialidad', $especialidad);
+            $stmt->bindParam(':telefono', $telefono);
+            $stmt->execute();
+            echo "Veterinario actualizado exitosamente.";
+            header("Location: ".$_SERVER['PHP_SELF']); // Redirige para evitar repetir la acción
+            exit();
+        } elseif ($action === 'eliminar') {
+            $id_veterinario = $_POST['id_veterinario'];
+
+            $stmt = $conn->prepare("BEGIN LAROATLB_GESTIONAR_VETERINARIOS('D', :id_veterinario); END;");
+            $stmt->bindParam(':id_veterinario', $id_veterinario);
+            $stmt->execute();
+            echo "Veterinario eliminado exitosamente.";
+            header("Location: ".$_SERVER['PHP_SELF']); // Redirige para evitar repetir la acción
+            exit();
         }
-        echo "</table>";
-    } elseif ($action === 'borrar') {
-        $ID_ROL = $_POST['id_rol'];
-        $stmt = $conn->prepare("DELETE FROM Roles WHERE ID_ROL = :ID_ROL");
-        $stmt->bindParam(':ID_ROL', $ID_ROL);
-        $stmt->execute();
-        echo "Registro borrado exitosamente.";
-    } elseif ($action === 'actualizar') {
-        $ID_ROL = $_POST['id_rol'];
-        $area_trabajo = $_POST['area_trabajo'];
-        $stmt = $conn->prepare("UPDATE Roles SET AREA_TRABAJO = :area_trabajo WHERE ID_Veterinario = :ID_ROL");
-        $stmt->bindParam(':ID_ROL', $ID_ROL);
-        $stmt->bindParam(':area_trabajo', $area_trabajo);
-        $stmt->execute();
-        echo "Registro actualizado exitosamente.";
+    } catch (PDOException $e) {
+        echo "Error: " . $e->getMessage();
     }
-    echo "<button onclick=redireccionRoles() > Volver </button>";
 }
 
 ?>
@@ -55,33 +108,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Roles</title>
+    <title>Gestión de Veterinarios</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        .button-container {
-            margin: 20px 0;
-        }
-        .form-container {
-            margin-top: 20px;
-        }
-    </style>
 </head>
 <body>
-
 <div class="container">
-    <h1>Gestión de Roles</h1>
+    <h1>Gestión de Veterinarios</h1>
     <div class="button-container">
         <button class="btn btn-primary" onclick="showForm('insertar')">Insertar</button>
         <button class="btn btn-primary" onclick="submitForm('listar')">Listar</button>
-        <button class="btn btn-danger" onclick="showForm('borrar')">Borrar</button>
+        <button class="btn btn-danger" onclick="showForm('eliminar')">Eliminar</button>
         <button class="btn btn-warning" onclick="showForm('actualizar')">Actualizar</button>
     </div>
-
     <div id="formContainer" class="form-container"></div>
-    <div id="output"></div>
 </div>
 
 <script>
@@ -91,39 +130,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (action === 'insertar') {
             html = `
-                <form method="POST" action="roles.php">
+                <form method="POST">
                     <input type="hidden" name="action" value="insertar">
-                    <div class="mb-3">
-                        <label for="area_trabajo" class="form-label">Área de Trabajo:</label>
-                        <input type="text" id="area_trabajo" name="area_trabajo" class="form-control" required>
-                    </div>
-                    <button type="submit" class="btn btn-success">Insertar</button>
+                    <input type="text" name="nombre" placeholder="Nombre" required>
+                    <input type="text" name="apellido1" placeholder="Apellido 1" required>
+                    <input type="text" name="apellido2" placeholder="Apellido 2">
+                    <input type="text" name="especialidad" placeholder="Especialidad">
+                    <input type="text" name="telefono" placeholder="Teléfono">
+                    <button type="submit">Insertar</button>
                 </form>
             `;
-        } else if (action === 'borrar') {
+        } else if (action === 'eliminar') {
             html = `
-                <form method="POST" action="roles.php">
-                    <input type="hidden" name="action" value="borrar">
-                    <div class="mb-3">
-                        <label for="id_rol" class="form-label">ID del Rol a borrar:</label>
-                        <input type="number" id="id_rol" name="id_rol" class="form-control" required>
-                    </div>
-                    <button type="submit" class="btn btn-danger">Borrar</button>
+                <form method="POST">
+                    <input type="hidden" name="action" value="eliminar">
+                    <input type="text" name="id_veterinario" placeholder="ID Veterinario" required>
+                    <button type="submit">Eliminar</button>
                 </form>
             `;
         } else if (action === 'actualizar') {
             html = `
-                <form method="POST" action="roles.php">
+                <form method="POST">
                     <input type="hidden" name="action" value="actualizar">
-                    <div class="mb-3">
-                        <label for="id_rol" class="form-label">ID del Rol a actualizar:</label>
-                        <input type="number" id="id_rol" name="id_rol" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="area_trabajo" class="form-label">Nueva Área de Trabajo:</label>
-                        <input type="text" id="area_trabajo" name="area_trabajo" class="form-control" required>
-                    </div>
-                    <button type="submit" class="btn btn-warning">Actualizar</button>
+                    <input type="text" name="id_veterinario" placeholder="ID Veterinario" required>
+                    <input type="text" name="nombre" placeholder="Nombre">
+                    <input type="text" name="apellido1" placeholder="Apellido 1">
+                    <input type="text" name="apellido2" placeholder="Apellido 2">
+                    <input type="text" name="especialidad" placeholder="Especialidad">
+                    <input type="text" name="telefono" placeholder="Teléfono">
+                    <button type="submit">Actualizar</button>
                 </form>
             `;
         }
@@ -134,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     function submitForm(action) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = 'roles.php';
+        form.action = '';
 
         const input = document.createElement('input');
         input.type = 'hidden';
@@ -146,6 +181,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         form.submit();
     }
 </script>
-
 </body>
 </html>
