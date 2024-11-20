@@ -1010,4 +1010,188 @@ BEGIN
         DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
     END
 
+-------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+--MANTENEDOR DE PRODUCTOS
+
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_PRODUCTOS (
+    p_operacion       VARCHAR2,
+    p_id_producto     NUMBER DEFAULT NULL,
+    p_nombre_producto VARCHAR2 DEFAULT NULL,
+    p_stock           NUMBER DEFAULT NULL
+) 
+IS
+    -- Cursor para verificar si un producto existe
+    CURSOR c_producto (id_prod NUMBER) IS
+        SELECT ID_PRODUCTO
+        FROM LAROATLB_PRODUCTO
+        WHERE ID_PRODUCTO = id_prod;
+
+    -- Cursor para mostrar todos los productos
+    CURSOR c_productos_all IS
+        SELECT ID_PRODUCTO, NOMBRE_PRODUCTO, STOCK
+        FROM LAROATLB_PRODUCTO;
+
+    v_existente c_producto%ROWTYPE; -- Variable para manejar datos del cursor
+
+BEGIN
+    LOCK TABLE LAROATLB_PRODUCTO IN ROW EXCLUSIVE MODE;
+
+    IF UPPER(p_operacion) = 'R' THEN
+        -- Leer todos los productos
+        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE PRODUCTOS ---');
+        FOR v_row IN c_productos_all LOOP
+            DBMS_OUTPUT.PUT_LINE('ID: ' || v_row.ID_PRODUCTO || 
+                                 ', Nombre: ' || v_row.NOMBRE_PRODUCTO || 
+                                 ', Stock: ' || v_row.STOCK);
+        END LOOP;
+
+    ELSIF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de un nuevo producto
+        INSERT INTO LAROATLB_PRODUCTO (
+            NOMBRE_PRODUCTO, STOCK
+        ) VALUES (
+            p_nombre_producto, p_stock
+        );
+        DBMS_OUTPUT.PUT_LINE('Producto insertado correctamente.');
+
+    ELSIF UPPER(p_operacion) = 'U' THEN
+        -- Verificar existencia del producto
+        OPEN c_producto(p_id_producto);
+        FETCH c_producto INTO v_existente;
+        IF c_producto%FOUND THEN
+            -- Actualización del producto
+            UPDATE LAROATLB_PRODUCTO
+            SET NOMBRE_PRODUCTO = p_nombre_producto,
+                STOCK = p_stock
+            WHERE ID_PRODUCTO = p_id_producto;
+            DBMS_OUTPUT.PUT_LINE('Producto actualizado correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró el producto con el ID proporcionado.');
+        END IF;
+        CLOSE c_producto;
+
+    ELSIF UPPER(p_operacion) = 'D' THEN
+        -- Verificar existencia del producto
+        OPEN c_producto(p_id_producto);
+        FETCH c_producto INTO v_existente;
+        IF c_producto%FOUND THEN
+            -- Eliminación del producto
+            DELETE FROM LAROATLB_PRODUCTO
+            WHERE ID_PRODUCTO = p_id_producto;
+            DBMS_OUTPUT.PUT_LINE('Producto eliminado correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró el producto con el ID proporcionado.');
+        END IF;
+        CLOSE c_producto;
+
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+    END IF;
+
+    -- Confirmar la transacción (en caso de no estar en modo automático)
+    COMMIT;
+
+EXCEPTION
+    WHEN PROGRAM_ERROR THEN
+        RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
+END;
+
+
+---------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+-- MANTENEDOR DE DETALLE PRODUCTO TRATAMIENTO
+
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_DETALLE_PRODUCTO_TRATAMIENTO (
+    p_operacion         VARCHAR2,
+    p_id_tratamiento    NUMBER DEFAULT NULL,
+    p_id_producto       NUMBER DEFAULT NULL,
+    p_cantidad          NUMBER DEFAULT NULL
+) 
+IS
+    -- Cursor para verificar si existe un detalle para un tratamiento y producto específico
+    CURSOR c_detalle (id_tratamiento NUMBER, id_producto NUMBER) IS
+        SELECT ID_TRATAMIENTO, ID_PRODUCTO
+        FROM LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO
+        WHERE ID_TRATAMIENTO = id_tratamiento
+        AND ID_PRODUCTO = id_producto;
+
+    -- Cursor para mostrar todos los detalles de productos y tratamientos
+    CURSOR c_detalles_all IS
+        SELECT ID_TRATAMIENTO, ID_PRODUCTO, CANTIDAD
+        FROM LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO;
+
+    v_existente c_detalle%ROWTYPE; -- Variable para manejar datos del cursor
+
+BEGIN
+    LOCK TABLE LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO IN ROW EXCLUSIVE MODE;
+
+    IF UPPER(p_operacion) = 'R' THEN
+        -- Leer todos los detalles de productos y tratamientos
+        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE DETALLES DE PRODUCTOS Y TRATAMIENTOS ---');
+        FOR v_row IN c_detalles_all LOOP
+            DBMS_OUTPUT.PUT_LINE('ID Tratamiento: ' || v_row.ID_TRATAMIENTO || 
+                                 ', ID Producto: ' || v_row.ID_PRODUCTO || 
+                                 ', Cantidad: ' || v_row.CANTIDAD);
+        END LOOP;
+
+    ELSIF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de un nuevo detalle de producto y tratamiento
+        -- Verificamos si ya existe el detalle antes de insertarlo
+        OPEN c_detalle(p_id_tratamiento, p_id_producto);
+        FETCH c_detalle INTO v_existente;
+        IF c_detalle%FOUND THEN
+            DBMS_OUTPUT.PUT_LINE('Este detalle ya existe.');
+        ELSE
+            INSERT INTO LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO (
+                ID_TRATAMIENTO, ID_PRODUCTO, CANTIDAD
+            ) VALUES (
+                p_id_tratamiento, p_id_producto, p_cantidad
+            );
+            DBMS_OUTPUT.PUT_LINE('Detalle de producto y tratamiento insertado correctamente.');
+        END IF;
+        CLOSE c_detalle;
+
+    ELSIF UPPER(p_operacion) = 'U' THEN
+        -- Verificar existencia del detalle
+        OPEN c_detalle(p_id_tratamiento, p_id_producto);
+        FETCH c_detalle INTO v_existente;
+        IF c_detalle%FOUND THEN
+            -- Actualización del detalle
+            UPDATE LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO
+            SET CANTIDAD = p_cantidad
+            WHERE ID_TRATAMIENTO = p_id_tratamiento
+            AND ID_PRODUCTO = p_id_producto;
+            DBMS_OUTPUT.PUT_LINE('Detalle de producto y tratamiento actualizado correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró el detalle con el tratamiento y producto proporcionados.');
+        END IF;
+        CLOSE c_detalle;
+
+    ELSIF UPPER(p_operacion) = 'D' THEN
+        -- Verificar existencia del detalle
+        OPEN c_detalle(p_id_tratamiento, p_id_producto);
+        FETCH c_detalle INTO v_existente;
+        IF c_detalle%FOUND THEN
+            -- Eliminación del detalle
+            DELETE FROM LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO
+            WHERE ID_TRATAMIENTO = p_id_tratamiento
+            AND ID_PRODUCTO = p_id_producto;
+            DBMS_OUTPUT.PUT_LINE('Detalle de producto y tratamiento eliminado correctamente.');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('No se encontró el detalle con el tratamiento y producto proporcionados.');
+        END IF;
+        CLOSE c_detalle;
+
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+    END IF;
+
+    -- Confirmar la transacción (en caso de no estar en modo automático)
+    COMMIT;
+
+EXCEPTION
+    WHEN PROGRAM_ERROR THEN
+        RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
+END;
 
