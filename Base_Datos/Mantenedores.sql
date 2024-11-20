@@ -480,62 +480,63 @@ END;
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 -- MANTENEDOR DE CALLES CLIENTE
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CALLES (
-    p_operacion      VARCHAR2,
-    p_id_calle       NUMBER DEFAULT NULL,
-    p_nombre_calle   VARCHAR2 DEFAULT NULL,
-    p_numero_calle   NUMBER DEFAULT NULL,
-    p_id_comuna      NUMBER DEFAULT NULL
-)
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CALLE_CLIENTE (
+    p_operacion    VARCHAR2,
+    p_id_calle     NUMBER DEFAULT NULL,
+    p_nombre_calle VARCHAR2 DEFAULT NULL,
+    p_numero_calle NUMBER DEFAULT NULL,
+    p_id_comuna    NUMBER DEFAULT NULL
+) 
 IS
-    -- Cursor para verificar si una calle existe
+    -- Cursor para verificar si existe una calle
     CURSOR c_calle (id_calle NUMBER) IS
         SELECT ID_CALLE
         FROM LAROATLB_CALLE_CLIENTE
         WHERE ID_CALLE = id_calle;
 
-    -- Cursor para mostrar todas las calles o filtradas por ID_COMUNA si se proporciona
-    CURSOR c_calles_all (id_comuna NUMBER) IS
-        SELECT c.ID_CALLE, c.NOMBRE_CALLE, c.NUMERO_CALLE, com.NOMBRE_COMUNA, reg.NOMBRE_REGION
-        FROM LAROATLB_CALLE_CLIENTE c
-        JOIN LAROATLB_COMUNA_CLIENTE com ON c.ID_COMUNA = com.ID_COMUNA
-        JOIN LAROATLB_REGION_CLIENTE reg ON com.ID_REGION = reg.ID_REGION
-        WHERE (id_comuna IS NULL OR c.ID_COMUNA = id_comuna);  -- Filtro por ID_COMUNA, si se proporciona
+    -- Cursor para mostrar todas las calles
+    CURSOR c_calles_all IS
+        SELECT ID_CALLE, NOMBRE_CALLE, NUMERO_CALLE, ID_COMUNA
+        FROM LAROATLB_CALLE_CLIENTE;
 
     v_existente c_calle%ROWTYPE; -- Variable para manejar datos del cursor
+
 BEGIN
     LOCK TABLE LAROATLB_CALLE_CLIENTE IN ROW EXCLUSIVE MODE;
 
     IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todos los registros o filtrados por comuna
+        -- Leer todas las calles
         DBMS_OUTPUT.PUT_LINE('--- LISTADO DE CALLES ---');
-        FOR v_row IN c_calles_all(p_id_comuna) LOOP
+        FOR v_row IN c_calles_all LOOP
             DBMS_OUTPUT.PUT_LINE('ID Calle: ' || v_row.ID_CALLE || 
-                                 ', Nombre de la Calle: ' || v_row.NOMBRE_CALLE ||
-                                 ', Número de la Calle: ' || v_row.NUMERO_CALLE ||
-                                 ', Nombre de la Comuna: ' || v_row.NOMBRE_COMUNA ||
-                                 ', Nombre de la Región: ' || v_row.NOMBRE_REGION);
+                                 ', Nombre Calle: ' || v_row.NOMBRE_CALLE || 
+                                 ', Número Calle: ' || v_row.NUMERO_CALLE || 
+                                 ', ID Comuna: ' || v_row.ID_COMUNA);
         END LOOP;
 
     ELSIF UPPER(p_operacion) = 'C' THEN
-        -- Inserción
-        INSERT INTO LAROATLB_CALLE_CLIENTE (
-            NOMBRE_CALLE,
-            NUMERO_CALLE,
-            ID_COMUNA
-        ) VALUES (
-            p_nombre_calle,
-            p_numero_calle,
-            p_id_comuna
-        );
-        DBMS_OUTPUT.PUT_LINE('Calle insertada correctamente.');
-
-    ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar existencia
+        -- Inserción de una nueva calle
+        -- Verificamos si ya existe la calle
         OPEN c_calle(p_id_calle);
         FETCH c_calle INTO v_existente;
         IF c_calle%FOUND THEN
-            -- Actualización
+            DBMS_OUTPUT.PUT_LINE('La calle con este ID ya existe.');
+        ELSE
+            INSERT INTO LAROATLB_CALLE_CLIENTE (
+                ID_CALLE, NOMBRE_CALLE, NUMERO_CALLE, ID_COMUNA
+            ) VALUES (
+                p_id_calle, p_nombre_calle, p_numero_calle, p_id_comuna
+            );
+            DBMS_OUTPUT.PUT_LINE('Calle insertada correctamente.');
+        END IF;
+        CLOSE c_calle;
+
+    ELSIF UPPER(p_operacion) = 'U' THEN
+        -- Verificar existencia de la calle
+        OPEN c_calle(p_id_calle);
+        FETCH c_calle INTO v_existente;
+        IF c_calle%FOUND THEN
+            -- Actualización de la calle
             UPDATE LAROATLB_CALLE_CLIENTE
             SET NOMBRE_CALLE = p_nombre_calle,
                 NUMERO_CALLE = p_numero_calle,
@@ -548,11 +549,11 @@ BEGIN
         CLOSE c_calle;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar existencia
+        -- Verificar existencia de la calle
         OPEN c_calle(p_id_calle);
         FETCH c_calle INTO v_existente;
         IF c_calle%FOUND THEN
-            -- Eliminación
+            -- Eliminación de la calle
             DELETE FROM LAROATLB_CALLE_CLIENTE
             WHERE ID_CALLE = p_id_calle;
             DBMS_OUTPUT.PUT_LINE('Calle eliminada correctamente.');
@@ -565,12 +566,14 @@ BEGIN
         DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
     END IF;
 
-    -- Confirmar la transacción
+    -- Confirmar la transacción (en caso de no estar en modo automático)
     COMMIT;
+
 EXCEPTION
-    WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Ocurrió un error: ' || SQLERRM);
+    WHEN PROGRAM_ERROR THEN
+        RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
 END;
+
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
