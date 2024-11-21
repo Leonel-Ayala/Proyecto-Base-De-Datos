@@ -144,6 +144,52 @@ END;
 
 --MANTENEDOR CLIENTE
 
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CLIENTES (
+    p_operacion   VARCHAR2,
+    p_id_cliente  NUMBER DEFAULT NULL,
+    p_rut         NUMBER DEFAULT NULL,
+    p_nombre      VARCHAR2 DEFAULT NULL,
+    p_apellido1   VARCHAR2 DEFAULT NULL,
+    p_apellido2   VARCHAR2 DEFAULT NULL,
+    p_telefono    NUMBER DEFAULT NULL,
+    p_id_calle    NUMBER DEFAULT NULL
+)
+IS
+BEGIN
+    IF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de un nuevo cliente
+        INSERT INTO LAROATLB_CLIENTE (
+            ID_CLIENTE, RUT, NOMBRE, APELLIDO1, APELLIDO2, TELEFONO, ID_CALLE
+        ) VALUES (
+            p_id_cliente, p_rut, p_nombre, p_apellido1, p_apellido2, p_telefono, p_id_calle
+        );
+
+    ELSIF UPPER(p_operacion) = 'U' THEN
+        -- Actualización de un cliente existente
+        UPDATE LAROATLB_CLIENTE
+        SET RUT = p_rut,
+            NOMBRE = p_nombre,
+            APELLIDO1 = p_apellido1,
+            APELLIDO2 = p_apellido2,
+            TELEFONO = p_telefono,
+            ID_CALLE = p_id_calle
+        WHERE ID_CLIENTE = p_id_cliente;
+
+    ELSIF UPPER(p_operacion) = 'D' THEN
+        -- Eliminación de un cliente
+        DELETE FROM LAROATLB_CLIENTE
+        WHERE ID_CLIENTE = p_id_cliente;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
+    END IF;
+
+    -- Confirmar la transacción
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
+END;
 
 
 -------------------------------------------
