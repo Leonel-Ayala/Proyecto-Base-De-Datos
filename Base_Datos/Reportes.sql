@@ -88,6 +88,24 @@ BEGIN
             Total_Usado DESC;
 END;
 ------------------------------------------
+--REPORTE  MAYOR CANTIDAD DE INGRESOS
+
+CREATE OR REPLACE PROCEDURE LAROATLB_AGRUPAR_INGRESOS (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT 
+            NOMBRE_INGRESO,
+            COUNT(*) AS CANTIDAD_INGRESOS
+        FROM 
+            LAROATLB_LOG_LOGIN
+        GROUP BY 
+            NOMBRE_INGRESO
+        ORDER BY 
+            CANTIDAD_INGRESOS DESC; -- Opcional: Ordenar por cantidad de ingresos
+END;
 
 -------------------------------------------------------------------------------------
 
