@@ -319,98 +319,56 @@ END;
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 -- MANTENEDOR DE CALLES CLIENTE
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CALLE_CLIENTE (
-    p_operacion    VARCHAR2,
-    p_id_calle     NUMBER DEFAULT NULL,
-    p_nombre_calle VARCHAR2 DEFAULT NULL,
-    p_numero_calle NUMBER DEFAULT NULL,
-    p_id_comuna    NUMBER DEFAULT NULL
-) 
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CALLES (
+    p_operacion     VARCHAR2,
+    p_id_calle      NUMBER DEFAULT NULL,
+    p_nombre_calle  VARCHAR2 DEFAULT NULL,
+    p_numero_calle  NUMBER DEFAULT NULL,
+    p_id_comuna     NUMBER DEFAULT NULL
+)
 IS
-    -- Cursor para verificar si existe una calle
-    CURSOR c_calle (id_calle NUMBER) IS
-        SELECT ID_CALLE
-        FROM LAROATLB_CALLE_CLIENTE
-        WHERE ID_CALLE = id_calle;
-
-    -- Cursor para mostrar todas las calles
-    CURSOR c_calles_all IS
-        SELECT ID_CALLE, NOMBRE_CALLE, NUMERO_CALLE, ID_COMUNA
-        FROM LAROATLB_CALLE_CLIENTE;
-
-    v_existente c_calle%ROWTYPE; -- Variable para manejar datos del cursor
-
 BEGIN
-    LOCK TABLE LAROATLB_CALLE_CLIENTE IN ROW EXCLUSIVE MODE;
-
-    IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todas las calles
-        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE CALLES ---');
-        FOR v_row IN c_calles_all LOOP
-            DBMS_OUTPUT.PUT_LINE('ID Calle: ' || v_row.ID_CALLE || 
-                                 ', Nombre Calle: ' || v_row.NOMBRE_CALLE || 
-                                 ', Número Calle: ' || v_row.NUMERO_CALLE || 
-                                 ', ID Comuna: ' || v_row.ID_COMUNA);
-        END LOOP;
-
-    ELSIF UPPER(p_operacion) = 'C' THEN
+    IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de una nueva calle
-        -- Verificamos si ya existe la calle
-        OPEN c_calle(p_id_calle);
-        FETCH c_calle INTO v_existente;
-        IF c_calle%FOUND THEN
-            DBMS_OUTPUT.PUT_LINE('La calle con este ID ya existe.');
-        ELSE
-            INSERT INTO LAROATLB_CALLE_CLIENTE (
-                ID_CALLE, NOMBRE_CALLE, NUMERO_CALLE, ID_COMUNA
-            ) VALUES (
-                p_id_calle, p_nombre_calle, p_numero_calle, p_id_comuna
-            );
-            DBMS_OUTPUT.PUT_LINE('Calle insertada correctamente.');
-        END IF;
-        CLOSE c_calle;
+        INSERT INTO LAROATLB_CALLE_CLIENTE (
+            ID_CALLE, NOMBRE_CALLE, NUMERO_CALLE, ID_COMUNA
+        ) VALUES (
+            p_id_calle, p_nombre_calle, p_numero_calle, p_id_comuna
+        );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar existencia de la calle
-        OPEN c_calle(p_id_calle);
-        FETCH c_calle INTO v_existente;
-        IF c_calle%FOUND THEN
-            -- Actualización de la calle
-            UPDATE LAROATLB_CALLE_CLIENTE
-            SET NOMBRE_CALLE = p_nombre_calle,
-                NUMERO_CALLE = p_numero_calle,
-                ID_COMUNA = p_id_comuna
-            WHERE ID_CALLE = p_id_calle;
-            DBMS_OUTPUT.PUT_LINE('Calle actualizada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la calle con el ID proporcionado.');
-        END IF;
-        CLOSE c_calle;
+        -- Actualización de una calle existente
+        UPDATE LAROATLB_CALLE_CLIENTE
+        SET NOMBRE_CALLE = p_nombre_calle,
+            NUMERO_CALLE = p_numero_calle,
+            ID_COMUNA = p_id_comuna
+        WHERE ID_CALLE = p_id_calle;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar existencia de la calle
-        OPEN c_calle(p_id_calle);
-        FETCH c_calle INTO v_existente;
-        IF c_calle%FOUND THEN
-            -- Eliminación de la calle
-            DELETE FROM LAROATLB_CALLE_CLIENTE
-            WHERE ID_CALLE = p_id_calle;
-            DBMS_OUTPUT.PUT_LINE('Calle eliminada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la calle con el ID proporcionado.');
-        END IF;
-        CLOSE c_calle;
+        -- Eliminación de una calle
+        DELETE FROM LAROATLB_CALLE_CLIENTE
+        WHERE ID_CALLE = p_id_calle;
 
     ELSE
-        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
     END IF;
 
-    -- Confirmar la transacción (en caso de no estar en modo automático)
+    -- Confirmar la transacción
     COMMIT;
-
 EXCEPTION
-    WHEN PROGRAM_ERROR THEN
-        RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
+END;
+---------------------------------------------------------------------------------
+---------CURSOR DER CALLE
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_CALLES (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_CALLE, NOMBRE_CALLE, NUMERO_CALLE, ID_COMUNA
+        FROM LAROATLB_CALLE_CLIENTE;
 END;
 
 
@@ -419,268 +377,167 @@ END;
 --MANTENEDOR DE RAZA
 
 CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_RAZAS (
-    p_operacion      VARCHAR2,
-    p_id_raza        NUMBER DEFAULT NULL,
-    p_nombre_raza    VARCHAR2 DEFAULT NULL,
-    p_id_especie     NUMBER DEFAULT NULL
+    p_operacion    VARCHAR2,
+    p_id_raza      NUMBER DEFAULT NULL,
+    p_nombre_raza  VARCHAR2 DEFAULT NULL,
+    p_id_especie   NUMBER DEFAULT NULL
 )
 IS
-    -- Cursor para verificar si una raza existe
-    CURSOR c_raza (id_raza NUMBER) IS
-        SELECT ID_RAZA
-        FROM LAROATLB_RAZA
-        WHERE ID_RAZA = id_raza;
-
-    -- Cursor para mostrar todas las razas con su especie asociada
-    CURSOR c_razas_all IS
-        SELECT r.ID_RAZA, r.NOMBRE_RAZA, e.NOMBRE_ESPECIE
-        FROM LAROATLB_RAZA r
-        JOIN LAROATLB_ESPECIE e ON r.ID_ESPECIE = e.ID_ESPECIE;
-
-    v_existente c_raza%ROWTYPE; -- Variable para manejar datos del cursor
 BEGIN
-    LOCK TABLE LAROATLB_RAZA IN ROW EXCLUSIVE MODE;
-
-    IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todas las razas con su especie asociada
-        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE RAZAS ---');
-        FOR v_row IN c_razas_all LOOP
-            DBMS_OUTPUT.PUT_LINE('ID Raza: ' || v_row.ID_RAZA || 
-                                 ', Nombre de la Raza: ' || v_row.NOMBRE_RAZA ||
-                                 ', Nombre de la Especie: ' || v_row.NOMBRE_ESPECIE);
-        END LOOP;
-
-    ELSIF UPPER(p_operacion) = 'C' THEN
-        -- Inserción de Raza
+    IF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de una nueva raza
         INSERT INTO LAROATLB_RAZA (
-            NOMBRE_RAZA,
-            ID_ESPECIE
+            ID_RAZA, NOMBRE_RAZA, ID_ESPECIE
         ) VALUES (
-            p_nombre_raza,
-            p_id_especie
+            p_id_raza, p_nombre_raza, p_id_especie
         );
-        DBMS_OUTPUT.PUT_LINE('Raza insertada correctamente.');
 
     ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar existencia de la raza
-        OPEN c_raza(p_id_raza);
-        FETCH c_raza INTO v_existente;
-        IF c_raza%FOUND THEN
-            -- Actualización de Raza
-            UPDATE LAROATLB_RAZA
-            SET NOMBRE_RAZA = p_nombre_raza,
-                ID_ESPECIE = p_id_especie
-            WHERE ID_RAZA = p_id_raza;
-            DBMS_OUTPUT.PUT_LINE('Raza actualizada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la raza con el ID proporcionado.');
-        END IF;
-        CLOSE c_raza;
+        -- Actualización de una raza existente
+        UPDATE LAROATLB_RAZA
+        SET NOMBRE_RAZA = p_nombre_raza,
+            ID_ESPECIE = p_id_especie
+        WHERE ID_RAZA = p_id_raza;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar existencia de la raza
-        OPEN c_raza(p_id_raza);
-        FETCH c_raza INTO v_existente;
-        IF c_raza%FOUND THEN
-            -- Eliminación de Raza
-            DELETE FROM LAROATLB_RAZA
-            WHERE ID_RAZA = p_id_raza;
-            DBMS_OUTPUT.PUT_LINE('Raza eliminada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la raza con el ID proporcionado.');
-        END IF;
-        CLOSE c_raza;
+        -- Eliminación de una raza
+        DELETE FROM LAROATLB_RAZA
+        WHERE ID_RAZA = p_id_raza;
 
     ELSE
-        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
     END IF;
 
     -- Confirmar la transacción
     COMMIT;
 EXCEPTION
     WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Ocurrió un error: ' || SQLERRM);
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
 END;
 
+------------------------------------------
+----------CURSOR DE RAZA
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_RAZAS (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT r.ID_RAZA, r.NOMBRE_RAZA, e.NOMBRE_ESPECIE
+        FROM LAROATLB_RAZA r
+        JOIN LAROATLB_ESPECIE e ON r.ID_ESPECIE = e.ID_ESPECIE;
+END;
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE ESPECIE
 
 CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_ESPECIES (
-    p_operacion      VARCHAR2,
-    p_id_especie     NUMBER DEFAULT NULL,
+    p_operacion    VARCHAR2,
+    p_id_especie   NUMBER DEFAULT NULL,
     p_nombre_especie VARCHAR2 DEFAULT NULL
 )
 IS
-    -- Cursor para verificar si una especie existe
-    CURSOR c_especie (id_especie NUMBER) IS
-        SELECT ID_ESPECIE
-        FROM LAROATLB_ESPECIE
-        WHERE ID_ESPECIE = id_especie;
-
-    -- Cursor para mostrar todas las especies
-    CURSOR c_especies_all IS
-        SELECT ID_ESPECIE, NOMBRE_ESPECIE
-        FROM LAROATLB_ESPECIE;
-
-    v_existente c_especie%ROWTYPE; -- Variable para manejar datos del cursor
 BEGIN
-    LOCK TABLE LAROATLB_ESPECIE IN ROW EXCLUSIVE MODE;
-
-    IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todas las especies
-        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE ESPECIES ---');
-        FOR v_row IN c_especies_all LOOP
-            DBMS_OUTPUT.PUT_LINE('ID Especie: ' || v_row.ID_ESPECIE || 
-                                 ', Nombre de la Especie: ' || v_row.NOMBRE_ESPECIE);
-        END LOOP;
-
-    ELSIF UPPER(p_operacion) = 'C' THEN
-        -- Inserción de Especie
+    IF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de una nueva especie
         INSERT INTO LAROATLB_ESPECIE (
-            NOMBRE_ESPECIE
+            ID_ESPECIE, NOMBRE_ESPECIE
         ) VALUES (
-            p_nombre_especie
+            p_id_especie, p_nombre_especie
         );
-        DBMS_OUTPUT.PUT_LINE('Especie insertada correctamente.');
 
     ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar existencia de la especie
-        OPEN c_especie(p_id_especie);
-        FETCH c_especie INTO v_existente;
-        IF c_especie%FOUND THEN
-            -- Actualización de Especie
-            UPDATE LAROATLB_ESPECIE
-            SET NOMBRE_ESPECIE = p_nombre_especie
-            WHERE ID_ESPECIE = p_id_especie;
-            DBMS_OUTPUT.PUT_LINE('Especie actualizada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la especie con el ID proporcionado.');
-        END IF;
-        CLOSE c_especie;
+        -- Actualización de una especie existente
+        UPDATE LAROATLB_ESPECIE
+        SET NOMBRE_ESPECIE = p_nombre_especie
+        WHERE ID_ESPECIE = p_id_especie;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar existencia de la especie
-        OPEN c_especie(p_id_especie);
-        FETCH c_especie INTO v_existente;
-        IF c_especie%FOUND THEN
-            -- Eliminación de Especie
-            DELETE FROM LAROATLB_ESPECIE
-            WHERE ID_ESPECIE = p_id_especie;
-            DBMS_OUTPUT.PUT_LINE('Especie eliminada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la especie con el ID proporcionado.');
-        END IF;
-        CLOSE c_especie;
+        -- Eliminación de una especie
+        DELETE FROM LAROATLB_ESPECIE
+        WHERE ID_ESPECIE = p_id_especie;
 
     ELSE
-        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
     END IF;
 
     -- Confirmar la transacción
     COMMIT;
 EXCEPTION
     WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Ocurrió un error: ' || SQLERRM);
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
+END;
+
+----------------------------------------------------------
+---CURSOR DE ESPECIE
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_ESPECIES (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_ESPECIE, NOMBRE_ESPECIE
+        FROM LAROATLB_ESPECIE;
 END;
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE MASCOTA
 CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_MASCOTAS (
-    p_operacion      VARCHAR2,
-    p_id_mascota     NUMBER DEFAULT NULL,
-    p_nombre_mascota VARCHAR2 DEFAULT NULL,
-    p_edad           NUMBER DEFAULT NULL,
-    p_id_cliente     NUMBER DEFAULT NULL,
-    p_id_raza        NUMBER DEFAULT NULL
+    p_operacion    VARCHAR2,
+    p_id_mascota   NUMBER DEFAULT NULL,
+    p_nombre       VARCHAR2 DEFAULT NULL,
+    p_edad         NUMBER DEFAULT NULL,
+    p_id_cliente   NUMBER DEFAULT NULL,
+    p_id_raza      NUMBER DEFAULT NULL
 )
 IS
-    -- Cursor para verificar si una mascota existe
-    CURSOR c_mascota (id_mascota NUMBER) IS
-        SELECT ID_MASCOTA
-        FROM LAROATLB_MASCOTA
-        WHERE ID_MASCOTA = id_mascota;
-
-    -- Cursor para mostrar todas las mascotas con su raza y cliente asociados
-    CURSOR c_mascotas_all IS
-        SELECT m.ID_MASCOTA, m.NOMBRE AS NOMNRE_MASCOTA, m.EDAD, c.NOMBRE AS NOMBRE_CLIENTE, r.NOMBRE_RAZA
-        FROM LAROATLB_MASCOTA m
-        JOIN LAROATLB_CLIENTE c ON m.ID_CLIENTE = c.ID_CLIENTE
-        JOIN LAROATLB_RAZA r ON m.ID_RAZA = r.ID_RAZA;
-
-    v_existente c_mascota%ROWTYPE; -- Variable para manejar datos del cursor
 BEGIN
-    LOCK TABLE LAROATLB_MASCOTA IN ROW EXCLUSIVE MODE;
-
-    IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todas las mascotas con su raza y cliente asociados
-        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE MASCOTAS ---');
-        FOR v_row IN c_mascotas_all LOOP
-            DBMS_OUTPUT.PUT_LINE('ID Mascota: ' || v_row.ID_MASCOTA || 
-                                 ', Nombre de la Mascota: ' || v_row.NOMBRE_MASCOTA ||
-                                 ', Edad: ' || v_row.EDAD ||
-                                 ', Nombre del Cliente: ' || v_row.NOMBRE_CLIENTE ||
-                                 ', Nombre de la Raza: ' || v_row.NOMBRE_RAZA);
-        END LOOP;
-
-    ELSIF UPPER(p_operacion) = 'C' THEN
-        -- Inserción de Mascota
+    IF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de una nueva mascota
         INSERT INTO LAROATLB_MASCOTA (
-            NOMBRE,
-            EDAD,
-            ID_CLIENTE,
-            ID_RAZA
+            ID_MASCOTA, NOMBRE, EDAD, ID_CLIENTE, ID_RAZA
         ) VALUES (
-            p_nombre_mascota,
-            p_edad,
-            p_id_cliente,
-            p_id_raza
+            p_id_mascota, p_nombre, p_edad, p_id_cliente, p_id_raza
         );
-        DBMS_OUTPUT.PUT_LINE('Mascota insertada correctamente.');
 
     ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar existencia de la mascota
-        OPEN c_mascota(p_id_mascota);
-        FETCH c_mascota INTO v_existente;
-        IF c_mascota%FOUND THEN
-            -- Actualización de Mascota
-            UPDATE LAROATLB_MASCOTA
-            SET NOMBRE = p_nombre_mascota,
-                EDAD = p_edad,
-                ID_CLIENTE = p_id_cliente,
-                ID_RAZA = p_id_raza
-            WHERE ID_MASCOTA = p_id_mascota;
-            DBMS_OUTPUT.PUT_LINE('Mascota actualizada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la mascota con el ID proporcionado.');
-        END IF;
-        CLOSE c_mascota;
+        -- Actualización de una mascota existente
+        UPDATE LAROATLB_MASCOTA
+        SET NOMBRE = p_nombre,
+            EDAD = p_edad,
+            ID_CLIENTE = p_id_cliente,
+            ID_RAZA = p_id_raza
+        WHERE ID_MASCOTA = p_id_mascota;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar existencia de la mascota
-        OPEN c_mascota(p_id_mascota);
-        FETCH c_mascota INTO v_existente;
-        IF c_mascota%FOUND THEN
-            -- Eliminación de Mascota
-            DELETE FROM LAROATLB_MASCOTA
-            WHERE ID_MASCOTA = p_id_mascota;
-            DBMS_OUTPUT.PUT_LINE('Mascota eliminada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la mascota con el ID proporcionado.');
-        END IF;
-        CLOSE c_mascota;
+        -- Eliminación de una mascota
+        DELETE FROM LAROATLB_MASCOTA
+        WHERE ID_MASCOTA = p_id_mascota;
 
     ELSE
-        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
     END IF;
 
     -- Confirmar la transacción
     COMMIT;
 EXCEPTION
     WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Ocurrió un error: ' || SQLERRM);
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
+END;
+-------------------------------------------------------
+--------CURSOR DE MASCOTA
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_MASCOTAS (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT m.ID_MASCOTA, m.NOMBRE, m.EDAD, c.NOMBRE AS CLIENTE, r.NOMBRE_RAZA
+        FROM LAROATLB_MASCOTA m
+        JOIN LAROATLB_CLIENTE c ON m.ID_CLIENTE = c.ID_CLIENTE
+        JOIN LAROATLB_RAZA r ON m.ID_RAZA = r.ID_RAZA;
 END;
 
 
@@ -689,96 +546,60 @@ END;
 --MANTENEDOR DE CITA
 
 CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CITAS (
-    p_operacion      VARCHAR2,
-    p_id_cita        NUMBER DEFAULT NULL,
-    p_fecha          DATE DEFAULT NULL,
-    p_sala           NUMBER DEFAULT NULL,
-    p_id_mascota     NUMBER DEFAULT NULL,
+    p_operacion    VARCHAR2,
+    p_id_cita      NUMBER DEFAULT NULL,
+    p_fecha        DATE DEFAULT NULL,
+    p_sala         NUMBER DEFAULT NULL,
+    p_id_mascota   NUMBER DEFAULT NULL,
     p_id_veterinario NUMBER DEFAULT NULL
 )
 IS
-    -- Cursor para verificar si una cita existe
-    CURSOR c_cita (id_cita NUMBER) IS
-        SELECT c.ID_CITA, c.FECHA, c.SALA, c.ID_MASCOTA, c.ID_VETERINARIO,
-               m.NOMBRE AS NOMBRE_MASCOTA, v.NOMBRE AS NOMBRE_VETERINARIO
-        FROM LAROATLB_CITA c
-        JOIN LAROATLB_MASCOTA m ON c.ID_MASCOTA = m.ID_MASCOTA
-        JOIN LAROATLB_VETERINARIO v ON c.ID_VETERINARIO = v.ID_VETERINARIO
-        WHERE c.ID_CITA = id_cita;
-
-    -- Cursor para mostrar todas las citas
-    CURSOR c_citas_all IS
-        SELECT c.ID_CITA, c.FECHA, c.SALA, c.ID_MASCOTA,m.NOMBRE AS NOMBRE_MASCOTA, c.ID_VETERINARIO,
-                v.NOMBRE AS NOMBRE_VETERINARIO
-        FROM LAROATLB_CITA c
-        JOIN LAROATLB_MASCOTA m ON c.ID_MASCOTA = m.ID_MASCOTA
-        JOIN LAROATLB_VETERINARIO v ON c.ID_VETERINARIO = v.ID_VETERINARIO;
-
-    v_existente c_cita%ROWTYPE; -- Variable para manejar datos del cursor
 BEGIN
-    LOCK TABLE LAROATLB_CITA IN ROW EXCLUSIVE MODE;
-
-    IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todas las citas
-        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE CITAS ---');
-        FOR v_row IN c_citas_all LOOP
-            DBMS_OUTPUT.PUT_LINE('ID Cita: ' || v_row.ID_CITA || 
-                                 ', Fecha: ' || v_row.FECHA || 
-                                 ', Sala: ' || v_row.SALA || 
-                                 ', Nombre Mascota: ' || v_row.NOMBRE_MASCOTA || 
-                                 ', Nombre Veterinario: ' || v_row.NOMBRE_VETERINARIO);
-        END LOOP;
-
-    ELSIF UPPER(p_operacion) = 'C' THEN
-        -- Inserción de Cita
+    IF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de nueva cita
         INSERT INTO LAROATLB_CITA (
-            FECHA, SALA, ID_MASCOTA, ID_VETERINARIO
+            ID_CITA, FECHA, SALA, ID_MASCOTA, ID_VETERINARIO
         ) VALUES (
-            p_fecha, p_sala, p_id_mascota, p_id_veterinario
+            p_id_cita, p_fecha, p_sala, p_id_mascota, p_id_veterinario
         );
-        DBMS_OUTPUT.PUT_LINE('Cita insertada correctamente.');
 
     ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar existencia de la cita
-        OPEN c_cita(p_id_cita);
-        FETCH c_cita INTO v_existente;
-        IF c_cita%FOUND THEN
-            -- Actualización de Cita
-            UPDATE LAROATLB_CITA
-            SET FECHA = p_fecha,
-                SALA = p_sala,
-                ID_MASCOTA = p_id_mascota,
-                ID_VETERINARIO = p_id_veterinario
-            WHERE ID_CITA = p_id_cita;
-            DBMS_OUTPUT.PUT_LINE('Cita actualizada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la cita con el ID proporcionado.');
-        END IF;
-        CLOSE c_cita;
+        -- Actualización de una cita existente
+        UPDATE LAROATLB_CITA
+        SET FECHA = p_fecha,
+            SALA = p_sala,
+            ID_MASCOTA = p_id_mascota,
+            ID_VETERINARIO = p_id_veterinario
+        WHERE ID_CITA = p_id_cita;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar existencia de la cita
-        OPEN c_cita(p_id_cita);
-        FETCH c_cita INTO v_existente;
-        IF c_cita%FOUND THEN
-            -- Eliminación de Cita
-            DELETE FROM LAROATLB_CITA
-            WHERE ID_CITA = p_id_cita;
-            DBMS_OUTPUT.PUT_LINE('Cita eliminada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la cita con el ID proporcionado.');
-        END IF;
-        CLOSE c_cita;
+        -- Eliminación de una cita
+        DELETE FROM LAROATLB_CITA
+        WHERE ID_CITA = p_id_cita;
 
     ELSE
-        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
     END IF;
 
     -- Confirmar la transacción
     COMMIT;
 EXCEPTION
     WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Ocurrió un error: ' || SQLERRM);
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
+END;
+--------------------------------------------------------------------
+---------CURSOR DE CITA
+
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_CITAS (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT c.ID_CITA, c.FECHA, c.SALA, m.NOMBRE AS MASCOTA, v.NOMBRE AS VETERINARIO
+        FROM LAROATLB_CITA c
+        JOIN LAROATLB_MASCOTA m ON c.ID_MASCOTA = m.ID_MASCOTA
+        JOIN LAROATLB_VETERINARIO v ON c.ID_VETERINARIO = v.ID_VETERINARIO;
 END;
 
 
@@ -787,102 +608,58 @@ END;
 ------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE TRATAMIENTOS
 
-
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_TRATAMIENTO (
-    p_operacion      VARCHAR2,
-    p_id_tratamiento NUMBER DEFAULT NULL,
-    p_descripcion    VARCHAR2 DEFAULT NULL,
-    p_fecha          DATE DEFAULT NULL,
-    p_id_mascota     NUMBER DEFAULT NULL,
-    p_id_veterinario NUMBER DEFAULT NULL
-) 
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_TRATAMIENTOS (
+    p_operacion       VARCHAR2,
+    p_id_tratamiento  NUMBER DEFAULT NULL,
+    p_descripcion     VARCHAR2 DEFAULT NULL,
+    p_fecha           DATE DEFAULT NULL,
+    p_id_mascota      NUMBER DEFAULT NULL,
+    p_id_veterinario  NUMBER DEFAULT NULL
+)
 IS
-    -- Cursor para verificar si existe un tratamiento
-    CURSOR c_tratamiento (id_trat NUMBER) IS
-        SELECT ID_TRATAMIENTO
-        FROM LAROATLB_TRATAMIENTO
-        WHERE ID_TRATAMIENTO = id_trat;
-
-    -- Cursor para mostrar todos los tratamientos
-    CURSOR c_tratamientos_all IS
-        SELECT ID_TRATAMIENTO, DESCRIPCION, FECHA, ID_MASCOTA, ID_VETERINARIO
-        FROM LAROATLB_TRATAMIENTO;
-
-    v_existente c_tratamiento%ROWTYPE; -- Variable para manejar datos del cursor
-
 BEGIN
-    LOCK TABLE LAROATLB_TRATAMIENTO IN ROW EXCLUSIVE MODE;
-
-    IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todos los tratamientos
-        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE TRATAMIENTOS ---');
-        FOR v_row IN c_tratamientos_all LOOP
-            DBMS_OUTPUT.PUT_LINE('ID Tratamiento: ' || v_row.ID_TRATAMIENTO || 
-                                 ', Descripción: ' || v_row.DESCRIPCION || 
-                                 ', Fecha: ' || TO_CHAR(v_row.FECHA, 'DD-MM-YYYY') || 
-                                 ', ID Mascota: ' || v_row.ID_MASCOTA || 
-                                 ', ID Veterinario: ' || v_row.ID_VETERINARIO);
-        END LOOP;
-
-    ELSIF UPPER(p_operacion) = 'C' THEN
-        -- Inserción de un nuevo tratamiento
-        -- Verificamos si ya existe el tratamiento
-        OPEN c_tratamiento(p_id_tratamiento);
-        FETCH c_tratamiento INTO v_existente;
-        IF c_tratamiento%FOUND THEN
-            DBMS_OUTPUT.PUT_LINE('El tratamiento con este ID ya existe.');
-        ELSE
-            INSERT INTO LAROATLB_TRATAMIENTO (
-                ID_TRATAMIENTO, DESCRIPCION, FECHA, ID_MASCOTA, ID_VETERINARIO
-            ) VALUES (
-                p_id_tratamiento, p_descripcion, p_fecha, p_id_mascota, p_id_veterinario
-            );
-            DBMS_OUTPUT.PUT_LINE('Tratamiento insertado correctamente.');
-        END IF;
-        CLOSE c_tratamiento;
+    IF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de nuevo tratamiento
+        INSERT INTO LAROATLB_TRATAMIENTO (
+            ID_TRATAMIENTO, DESCRIPCION, FECHA, ID_MASCOTA, ID_VETERINARIO
+        ) VALUES (
+            p_id_tratamiento, p_descripcion, p_fecha, p_id_mascota, p_id_veterinario
+        );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar existencia del tratamiento
-        OPEN c_tratamiento(p_id_tratamiento);
-        FETCH c_tratamiento INTO v_existente;
-        IF c_tratamiento%FOUND THEN
-            -- Actualización del tratamiento
-            UPDATE LAROATLB_TRATAMIENTO
-            SET DESCRIPCION = p_descripcion,
-                FECHA = p_fecha,
-                ID_MASCOTA = p_id_mascota,
-                ID_VETERINARIO = p_id_veterinario
-            WHERE ID_TRATAMIENTO = p_id_tratamiento;
-            DBMS_OUTPUT.PUT_LINE('Tratamiento actualizado correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró el tratamiento con el ID proporcionado.');
-        END IF;
-        CLOSE c_tratamiento;
+        -- Actualización de un tratamiento
+        UPDATE LAROATLB_TRATAMIENTO
+        SET DESCRIPCION = p_descripcion,
+            FECHA = p_fecha,
+            ID_MASCOTA = p_id_mascota,
+            ID_VETERINARIO = p_id_veterinario
+        WHERE ID_TRATAMIENTO = p_id_tratamiento;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar existencia del tratamiento
-        OPEN c_tratamiento(p_id_tratamiento);
-        FETCH c_tratamiento INTO v_existente;
-        IF c_tratamiento%FOUND THEN
-            -- Eliminación del tratamiento
-            DELETE FROM LAROATLB_TRATAMIENTO
-            WHERE ID_TRATAMIENTO = p_id_tratamiento;
-            DBMS_OUTPUT.PUT_LINE('Tratamiento eliminado correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró el tratamiento con el ID proporcionado.');
-        END IF;
-        CLOSE c_tratamiento;
+        -- Eliminación de tratamiento
+        DELETE FROM LAROATLB_TRATAMIENTO
+        WHERE ID_TRATAMIENTO = p_id_tratamiento;
 
     ELSE
-        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
     END IF;
 
-    -- Confirmar la transacción (en caso de no estar en modo automático)
+    -- Confirmar la transacción
     COMMIT;
-
 EXCEPTION
-    WHEN PROGRAM_ERROR THEN
-        RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
+END;
+--------------------------------------
+----- CURSOR TRATAMIENTO
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_TRATAMIENTOS (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_TRATAMIENTO, DESCRIPCION, FECHA, ID_MASCOTA, ID_VETERINARIO
+        FROM LAROATLB_TRATAMIENTO;
 END;
 
 
@@ -896,75 +673,40 @@ CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_PRODUCTOS (
     p_id_producto     NUMBER DEFAULT NULL,
     p_nombre_producto VARCHAR2 DEFAULT NULL,
     p_stock           NUMBER DEFAULT NULL
-) 
+)
 IS
-    -- Cursor para verificar si el producto existe
-    CURSOR c_producto IS
-        SELECT COUNT(*)
-        FROM LAROATLB_PRODUCTO
-        WHERE ID_PRODUCTO = p_id_producto;
-
-    v_existe NUMBER; -- Variable para almacenar si el producto existe
 BEGIN
-    -- Bloquear la tabla para garantizar exclusividad
-    LOCK TABLE LAROATLB_PRODUCTO IN ROW EXCLUSIVE MODE;
-
     IF UPPER(p_operacion) = 'C' THEN
-        -- Inserción de un nuevo producto
+        -- Inserción de nuevo producto
         INSERT INTO LAROATLB_PRODUCTO (
-            NOMBRE_PRODUCTO, STOCK
+            ID_PRODUCTO, NOMBRE_PRODUCTO, STOCK
         ) VALUES (
-            p_nombre_producto, p_stock
+            p_id_producto, p_nombre_producto, p_stock
         );
-        DBMS_OUTPUT.PUT_LINE('Producto insertado correctamente.');
 
     ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar si el producto existe
-        OPEN c_producto;
-        FETCH c_producto INTO v_existe;
-        CLOSE c_producto;
-
-        IF v_existe > 0 THEN
-            -- Actualización del producto
-            UPDATE LAROATLB_PRODUCTO
-            SET NOMBRE_PRODUCTO = p_nombre_producto,
-                STOCK = p_stock
-            WHERE ID_PRODUCTO = p_id_producto;
-            DBMS_OUTPUT.PUT_LINE('Producto actualizado correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró el producto con el ID proporcionado.');
-        END IF;
+        -- Actualización de un producto
+        UPDATE LAROATLB_PRODUCTO
+        SET NOMBRE_PRODUCTO = p_nombre_producto,
+            STOCK = p_stock
+        WHERE ID_PRODUCTO = p_id_producto;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar si el producto existe
-        OPEN c_producto;
-        FETCH c_producto INTO v_existe;
-        CLOSE c_producto;
-
-        IF v_existe > 0 THEN
-            -- Eliminación del producto
-            DELETE FROM LAROATLB_PRODUCTO
-            WHERE ID_PRODUCTO = p_id_producto;
-            DBMS_OUTPUT.PUT_LINE('Producto eliminado correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró el producto con el ID proporcionado.');
-        END IF;
+        -- Eliminación de producto
+        DELETE FROM LAROATLB_PRODUCTO
+        WHERE ID_PRODUCTO = p_id_producto;
 
     ELSE
-        -- Operación no reconocida
-        RAISE_APPLICATION_ERROR(-20001, 'Operación no reconocida. Use "C", "U" o "D".');
+        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
     END IF;
 
-    -- Confirmar transacción
+    -- Confirmar la transacción
     COMMIT;
-
 EXCEPTION
     WHEN OTHERS THEN
-        -- Manejo de cualquier error inesperado
-        ROLLBACK;
-        RAISE_APPLICATION_ERROR(-20002, 'Ocurrió un error: ' || SQLERRM);
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
 END;
-/
+
 
 
 -- CURSOR DE PRODUCTOS
@@ -974,104 +716,65 @@ CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_PRODUCTOS (
 IS
 BEGIN
     OPEN p_cursor FOR
-        SELECT ID_PRODUCTO,NOMBRE_PRODUCTO,STOCK
+        SELECT ID_PRODUCTO, NOMBRE_PRODUCTO, STOCK
         FROM LAROATLB_PRODUCTO;
 END;
+
 ---------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------
 -- MANTENEDOR DE DETALLE PRODUCTO TRATAMIENTO
 
 CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_DETALLE_PRODUCTO_TRATAMIENTO (
-    p_operacion         VARCHAR2,
-    p_id_tratamiento    NUMBER DEFAULT NULL,
-    p_id_producto       NUMBER DEFAULT NULL,
-    p_cantidad          NUMBER DEFAULT NULL
-) 
+    p_operacion       VARCHAR2,
+    p_id_tratamiento  NUMBER DEFAULT NULL,
+    p_id_producto     NUMBER DEFAULT NULL,
+    p_cantidad        NUMBER DEFAULT NULL
+)
 IS
-    -- Cursor para verificar si existe un detalle para un tratamiento y producto específico
-    CURSOR c_detalle (id_tratamiento NUMBER, id_producto NUMBER) IS
-        SELECT ID_TRATAMIENTO, ID_PRODUCTO
-        FROM LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO
-        WHERE ID_TRATAMIENTO = id_tratamiento
-        AND ID_PRODUCTO = id_producto;
-
-    -- Cursor para mostrar todos los detalles de productos y tratamientos
-    CURSOR c_detalles_all IS
-        SELECT ID_TRATAMIENTO, ID_PRODUCTO, CANTIDAD
-        FROM LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO;
-
-    v_existente c_detalle%ROWTYPE; -- Variable para manejar datos del cursor
-
 BEGIN
-    LOCK TABLE LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO IN ROW EXCLUSIVE MODE;
-
-    IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todos los detalles de productos y tratamientos
-        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE DETALLES DE PRODUCTOS Y TRATAMIENTOS ---');
-        FOR v_row IN c_detalles_all LOOP
-            DBMS_OUTPUT.PUT_LINE('ID Tratamiento: ' || v_row.ID_TRATAMIENTO || 
-                                 ', ID Producto: ' || v_row.ID_PRODUCTO || 
-                                 ', Cantidad: ' || v_row.CANTIDAD);
-        END LOOP;
-
-    ELSIF UPPER(p_operacion) = 'C' THEN
-        -- Inserción de un nuevo detalle de producto y tratamiento
-        -- Verificamos si ya existe el detalle antes de insertarlo
-        OPEN c_detalle(p_id_tratamiento, p_id_producto);
-        FETCH c_detalle INTO v_existente;
-        IF c_detalle%FOUND THEN
-            DBMS_OUTPUT.PUT_LINE('Este detalle ya existe.');
-        ELSE
-            INSERT INTO LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO (
-                ID_TRATAMIENTO, ID_PRODUCTO, CANTIDAD
-            ) VALUES (
-                p_id_tratamiento, p_id_producto, p_cantidad
-            );
-            DBMS_OUTPUT.PUT_LINE('Detalle de producto y tratamiento insertado correctamente.');
-        END IF;
-        CLOSE c_detalle;
+    IF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de un nuevo detalle de producto para un tratamiento
+        INSERT INTO LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO (
+            ID_TRATAMIENTO, ID_PRODUCTO, CANTIDAD
+        ) VALUES (
+            p_id_tratamiento, p_id_producto, p_cantidad
+        );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar existencia del detalle
-        OPEN c_detalle(p_id_tratamiento, p_id_producto);
-        FETCH c_detalle INTO v_existente;
-        IF c_detalle%FOUND THEN
-            -- Actualización del detalle
-            UPDATE LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO
-            SET CANTIDAD = p_cantidad
-            WHERE ID_TRATAMIENTO = p_id_tratamiento
-            AND ID_PRODUCTO = p_id_producto;
-            DBMS_OUTPUT.PUT_LINE('Detalle de producto y tratamiento actualizado correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró el detalle con el tratamiento y producto proporcionados.');
-        END IF;
-        CLOSE c_detalle;
+        -- Actualización de un detalle de producto para un tratamiento
+        UPDATE LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO
+        SET CANTIDAD = p_cantidad
+        WHERE ID_TRATAMIENTO = p_id_tratamiento
+          AND ID_PRODUCTO = p_id_producto;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar existencia del detalle
-        OPEN c_detalle(p_id_tratamiento, p_id_producto);
-        FETCH c_detalle INTO v_existente;
-        IF c_detalle%FOUND THEN
-            -- Eliminación del detalle
-            DELETE FROM LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO
-            WHERE ID_TRATAMIENTO = p_id_tratamiento
-            AND ID_PRODUCTO = p_id_producto;
-            DBMS_OUTPUT.PUT_LINE('Detalle de producto y tratamiento eliminado correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró el detalle con el tratamiento y producto proporcionados.');
-        END IF;
-        CLOSE c_detalle;
+        -- Eliminación de un detalle de producto para un tratamiento
+        DELETE FROM LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO
+        WHERE ID_TRATAMIENTO = p_id_tratamiento
+          AND ID_PRODUCTO = p_id_producto;
 
     ELSE
-        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
     END IF;
 
-    -- Confirmar la transacción (en caso de no estar en modo automático)
+    -- Confirmar la transacción
     COMMIT;
-
 EXCEPTION
-    WHEN PROGRAM_ERROR THEN
-        RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
 END;
+--------------------------------------------------
+------CURSOR DETALLE
+
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_DETALLE_PRODUCTO_TRATAMIENTO (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_TRATAMIENTO, ID_PRODUCTO, CANTIDAD
+        FROM LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO;
+END;
+
 
 
