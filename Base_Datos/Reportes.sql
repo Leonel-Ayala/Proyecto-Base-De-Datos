@@ -1,21 +1,28 @@
 -- Consulta De citas Veterinario
 
-
-SELECT 
-    V.Nombre || ' ' || V.Apellido1 || ' ' || V.Apellido2 AS Veterinario,
-    COUNT(C.ID_Cita) AS Total_Citas
-FROM 
-    LAROATLB_Cita C
-JOIN 
-    LAROATLB_Veterinario V ON C.ID_Veterinario = V.ID_Veterinario
-WHERE 
-    C.Fecha BETWEEN TO_DATE('2024-11-01', 'YYYY-MM-DD') AND TO_DATE('2024-11-30', 'YYYY-MM-DD')
-GROUP BY 
-    V.Nombre, V.Apellido1, V.Apellido2
-ORDER BY 
-    Total_Citas DESC;
-
-
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_CITAS_POR_VETERINARIO (
+    p_fecha        DATE,
+    p_id_veterinario NUMBER,
+    p_cursor       OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT 
+            V.Nombre || ' ' || V.Apellido1 || ' ' || V.Apellido2 AS Veterinario,
+            COUNT(C.ID_Cita) AS Total_Citas
+        FROM 
+            LAROATLB_Cita C
+        JOIN 
+            LAROATLB_Veterinario V ON C.ID_Veterinario = V.ID_Veterinario
+        WHERE 
+            TRUNC(C.Fecha) = TRUNC(p_fecha) -- Filtrar por el día específico proporcionado
+            AND C.ID_Veterinario = p_id_veterinario -- Filtrar por el ID del veterinario
+        GROUP BY 
+            V.Nombre, V.Apellido1, V.Apellido2
+        ORDER BY 
+            Total_Citas DESC;
+END;
 
 
 
