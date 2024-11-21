@@ -831,4 +831,11 @@ BEGIN
         SELECT ID_LOGIN, NOMBRE_INGRESO, FECHA_INGRESO
         FROM LAROATLB_LOG_LOGIN;
 END;
+---------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+-- MANTENEDOR DE USUARIOS
+
+---------------------
+--CURSOR USUARIOS
+
 
