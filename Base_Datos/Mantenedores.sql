@@ -143,7 +143,6 @@ CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CLIENTES (
 )
 IS
 BEGIN
-    LOCK TABLE LAROATLB_CLIENTE IN ROW EXCLUSIVE MODE;
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de un nuevo cliente
         INSERT INTO LAROATLB_CLIENTE (
@@ -151,7 +150,6 @@ BEGIN
         ) VALUES (
             p_id_cliente, p_rut, p_nombre, p_apellido1, p_apellido2, p_telefono, p_id_calle
         );
-
     ELSIF UPPER(p_operacion) = 'U' THEN
         -- Actualización de un cliente existente
         UPDATE LAROATLB_CLIENTE
@@ -162,39 +160,49 @@ BEGIN
             TELEFONO = p_telefono,
             ID_CALLE = p_id_calle
         WHERE ID_CLIENTE = p_id_cliente;
-
     ELSIF UPPER(p_operacion) = 'D' THEN
         -- Eliminación de un cliente
-        DELETE FROM LAROATLB_CLIENTE
+        DELETE FROM LAROATLB_CLIENTE 
         WHERE ID_CLIENTE = p_id_cliente;
-
     ELSE
-        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
+        RAISE_APPLICATION_ERROR(-20001, 'Operación no válida. Use "C", "U" o "D".');
     END IF;
 
-    -- Confirmar la transacción
     COMMIT;
 EXCEPTION
     WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
+        ROLLBACK;
+        RAISE_APPLICATION_ERROR(-20002, 'Error al gestionar cliente: ' || SQLERRM);
 END;
 
 
 -------------------------------------------
 --CURSOR DE CLIENTE
 
-CREATE OR REPLACE PROCEDURE LAROATLB_OBTENER_CLIENTES (
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_CLIENTES (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
 BEGIN
     OPEN p_cursor FOR
-        SELECT c.ID_Cliente, c.Nombre, c.Apellido1, c.Apellido2, 
-               r.Nombre_Region, c.Telefono
-        FROM LAROATLB_Cliente c
-        JOIN LAROATLB_Region_Cliente r
-        ON c.ID_Region = r.ID_Region;
+        SELECT 
+            CA.ID_CLIENTE,
+            CA.RUT,
+            CA.NOMBRE,
+            CA.APELLIDO1,
+            CA.APELLIDO2,
+            CA.TELEFONO,
+            CALLE.NOMBRE_CALLE || ',' || CALLE.NUMERO_CALLE||','||COM.NOMBRE_COMUNA||','||RE.NOMBRE_REGION  AS DIRECCION
+        FROM 
+            LAROATLB_CLIENTE CA
+        JOIN 
+            LAROATLB_CALLE_CLIENTE CALLE ON (CA.ID_CALLE = CALLE.ID_CALLE)
+        JOIN 
+            LAROATLB_COMUNA_CLIENTE COM ON CALLE.ID_COMUNA = COM.ID_COMUNA
+        JOIN
+            LAROATLB_REGION_CLIENTE RE ON COM.ID_REGION = RE.ID_REGION;
 END;
+
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
