@@ -776,5 +776,59 @@ BEGIN
         FROM LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO;
 END;
 
+---------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+-- MANTENEDOR DE LOG LOGIN
 
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_LOG_LOGIN (
+    p_operacion       VARCHAR2,
+    p_id_login        NUMBER DEFAULT NULL,
+    p_nombre_ingreso  VARCHAR2 DEFAULT NULL,
+    p_fecha_ingreso   DATE DEFAULT NULL
+)
+IS
+BEGIN
+    IF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de un nuevo registro en el log de login
+        INSERT INTO LAROATLB_LOG_LOGIN (
+            NOMBRE_INGRESO, FECHA_INGRESO
+        ) VALUES (
+            p_nombre_ingreso, p_fecha_ingreso
+        );
+
+    ELSIF UPPER(p_operacion) = 'U' THEN
+        -- Actualización de un registro existente en el log de login
+        UPDATE LAROATLB_LOG_LOGIN
+        SET NOMBRE_INGRESO = p_nombre_ingreso,
+            FECHA_INGRESO = p_fecha_ingreso
+        WHERE ID_LOGIN = p_id_login;
+
+    ELSIF UPPER(p_operacion) = 'D' THEN
+        -- Eliminación de un registro del log de login
+        DELETE FROM LAROATLB_LOG_LOGIN
+        WHERE ID_LOGIN = p_id_login;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
+    END IF;
+
+    -- Confirmar la transacción
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
+END;
+
+---------------------------------------------------------
+--------CURSOR LOG LOGIN
+
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_LOG_LOGIN (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_LOGIN, NOMBRE_INGRESO, FECHA_INGRESO
+        FROM LAROATLB_LOG_LOGIN;
+END;
 
