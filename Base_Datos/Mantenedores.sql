@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------------------------------------------------
 -- MANTENEDOR PARA VETERINARIO
 
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_VETERINARIOS (
+create or replace NONEDITIONABLE PROCEDURE LAROATLB_GESTIONAR_VETERINARIOS (
     p_operacion       VARCHAR2,
     p_id_veterinario  NUMBER DEFAULT NULL,
     p_nombre          VARCHAR2 DEFAULT NULL,
@@ -14,9 +14,11 @@ CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_VETERINARIOS (
 IS
     NUEVO_CORREO VARCHAR2(100);
 BEGIN
+    LOCK TABLE LAROATLB_VETERINARIO IN ROW EXCLUSIVE MODE;
+    NUEVO_CORREO := LAROATLB_GENERA_CORREO_VETE(p_nombre, p_apellido1, p_apellido2);
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de nuevo veterinario
-        NUEVO_CORREO := LAROATLB_GENERA_CORREO_VETE(p_nombre, p_apellido1, p_apellido2);
+
         INSERT INTO LAROATLB_VETERINARIO (
             NOMBRE, APELLIDO1, APELLIDO2, ESPECIALIDAD, TELEFONO, EMAIL
         ) VALUES (
@@ -24,13 +26,14 @@ BEGIN
         );
     ELSIF UPPER(p_operacion) = 'U' THEN
         -- Actualización de un veterinario
+
         UPDATE LAROATLB_VETERINARIO
         SET NOMBRE = p_nombre,
             APELLIDO1 = p_apellido1,
             APELLIDO2 = p_apellido2,
             ESPECIALIDAD = p_especialidad,
             TELEFONO = p_telefono,
-            EMAIL = NUEVO_CORREO
+            EMAIL= NUEVO_CORREO
         WHERE ID_VETERINARIO = p_id_veterinario;
     ELSIF UPPER(p_operacion) = 'D' THEN
         -- Eliminación de veterinario
@@ -42,7 +45,6 @@ EXCEPTION
     WHEN PROGRAM_ERROR THEN
         RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
 END;
-
 ------------------------
 --CURSOR LISTAR VETERINARIO
 
@@ -69,15 +71,13 @@ CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_SECRETARIAS (
 ) 
 IS
     NUEVO_CORREO VARCHAR2(100);
-
-    -- Cursor para verificar si una secretaria existe
-    
 BEGIN
+    -- Bloquear la tabla para operaciones exclusivas
     LOCK TABLE LAROATLB_SECRETARIA IN ROW EXCLUSIVE MODE;
-
+    NUEVO_CORREO := LAROATLB_GENERA_CORREO_SECRE(p_nombre, p_apellido1, p_apellido2);
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción
-        NUEVO_CORREO := LAROATLB_GENERA_CORREO_SECRE(p_nombre, p_apellido1, p_apellido2);
+        
         INSERT INTO LAROATLB_SECRETARIA (
             NOMBRE, APELLIDO1, APELLIDO2, TELEFONO, EMAIL
         ) VALUES (
@@ -85,43 +85,29 @@ BEGIN
         );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar existencia
-        OPEN c_secretaria(p_id_secretaria);
-        FETCH c_secretaria INTO v_existente;
-        IF c_secretaria%FOUND THEN
-            -- Actualización
-            NUEVO_CORREO := LAROATLB_GENERA_CORREO_SECRE(p_nombre, p_apellido1, p_apellido2);
-            UPDATE LAROATLB_SECRETARIA
-            SET NOMBRE = p_nombre,
-                APELLIDO1 = p_apellido1,
-                APELLIDO2 = p_apellido2,
-                TELEFONO = p_telefono,
-                EMAIL = NUEVO_CORREO
-            WHERE ID_SECRE = p_id_secretaria;
-        ELSE
-            RAISE_APPLICATION_ERROR(-20001, 'No se encontró la secretaria con el ID proporcionado.');
-        END IF;
-        CLOSE c_secretaria;
+        -- Actualización
+        
+        UPDATE LAROATLB_SECRETARIA
+        SET NOMBRE = p_nombre,
+            APELLIDO1 = p_apellido1,
+            APELLIDO2 = p_apellido2,
+            TELEFONO = p_telefono,
+            EMAIL = NUEVO_CORREO
+        WHERE ID_SECRE = p_id_secretaria;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar existencia
-        OPEN c_secretaria(p_id_secretaria);
-        FETCH c_secretaria INTO v_existente;
-        IF c_secretaria%FOUND THEN
-            -- Eliminación
-            DELETE FROM LAROATLB_SECRETARIA
-            WHERE ID_SECRE = p_id_secretaria;
-        ELSE
-            RAISE_APPLICATION_ERROR(-20002, 'No se encontró la secretaria con el ID proporcionado.');
-        END IF;
-        CLOSE c_secretaria;
+        -- Eliminación
+        DELETE FROM LAROATLB_SECRETARIA
+        WHERE ID_SECRE = p_id_secretaria;
 
     ELSE
+        -- Error: operación no reconocida
         RAISE_APPLICATION_ERROR(-20003, 'Operación no reconocida. Use "C", "U" o "D".');
     END IF;
 
     -- Confirmar la transacción
     COMMIT;
+
 EXCEPTION
     WHEN PROGRAM_ERROR THEN
         RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
