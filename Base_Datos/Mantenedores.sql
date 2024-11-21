@@ -1041,32 +1041,18 @@ CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_PRODUCTOS (
     p_stock           NUMBER DEFAULT NULL
 ) 
 IS
-    -- Cursor para verificar si un producto existe
-    CURSOR c_producto (id_prod NUMBER) IS
-        SELECT ID_PRODUCTO
+    -- Cursor para verificar si el producto existe
+    CURSOR c_producto IS
+        SELECT COUNT(*)
         FROM LAROATLB_PRODUCTO
-        WHERE ID_PRODUCTO = id_prod;
+        WHERE ID_PRODUCTO = p_id_producto;
 
-    -- Cursor para mostrar todos los productos
-    CURSOR c_productos_all IS
-        SELECT ID_PRODUCTO, NOMBRE_PRODUCTO, STOCK
-        FROM LAROATLB_PRODUCTO;
-
-    v_existente c_producto%ROWTYPE; -- Variable para manejar datos del cursor
-
+    v_existe NUMBER; -- Variable para almacenar si el producto existe
 BEGIN
+    -- Bloquear la tabla para garantizar exclusividad
     LOCK TABLE LAROATLB_PRODUCTO IN ROW EXCLUSIVE MODE;
 
-    IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todos los productos
-        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE PRODUCTOS ---');
-        FOR v_row IN c_productos_all LOOP
-            DBMS_OUTPUT.PUT_LINE('ID: ' || v_row.ID_PRODUCTO || 
-                                 ', Nombre: ' || v_row.NOMBRE_PRODUCTO || 
-                                 ', Stock: ' || v_row.STOCK);
-        END LOOP;
-
-    ELSIF UPPER(p_operacion) = 'C' THEN
+    IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de un nuevo producto
         INSERT INTO LAROATLB_PRODUCTO (
             NOMBRE_PRODUCTO, STOCK
@@ -1076,10 +1062,12 @@ BEGIN
         DBMS_OUTPUT.PUT_LINE('Producto insertado correctamente.');
 
     ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar existencia del producto
-        OPEN c_producto(p_id_producto);
-        FETCH c_producto INTO v_existente;
-        IF c_producto%FOUND THEN
+        -- Verificar si el producto existe
+        OPEN c_producto;
+        FETCH c_producto INTO v_existe;
+        CLOSE c_producto;
+
+        IF v_existe > 0 THEN
             -- Actualización del producto
             UPDATE LAROATLB_PRODUCTO
             SET NOMBRE_PRODUCTO = p_nombre_producto,
@@ -1089,13 +1077,14 @@ BEGIN
         ELSE
             DBMS_OUTPUT.PUT_LINE('No se encontró el producto con el ID proporcionado.');
         END IF;
-        CLOSE c_producto;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar existencia del producto
-        OPEN c_producto(p_id_producto);
-        FETCH c_producto INTO v_existente;
-        IF c_producto%FOUND THEN
+        -- Verificar si el producto existe
+        OPEN c_producto;
+        FETCH c_producto INTO v_existe;
+        CLOSE c_producto;
+
+        IF v_existe > 0 THEN
             -- Eliminación del producto
             DELETE FROM LAROATLB_PRODUCTO
             WHERE ID_PRODUCTO = p_id_producto;
@@ -1103,21 +1092,34 @@ BEGIN
         ELSE
             DBMS_OUTPUT.PUT_LINE('No se encontró el producto con el ID proporcionado.');
         END IF;
-        CLOSE c_producto;
 
     ELSE
-        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+        -- Operación no reconocida
+        RAISE_APPLICATION_ERROR(-20001, 'Operación no reconocida. Use "C", "U" o "D".');
     END IF;
 
-    -- Confirmar la transacción (en caso de no estar en modo automático)
+    -- Confirmar transacción
     COMMIT;
 
 EXCEPTION
-    WHEN PROGRAM_ERROR THEN
-        RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
+    WHEN OTHERS THEN
+        -- Manejo de cualquier error inesperado
+        ROLLBACK;
+        RAISE_APPLICATION_ERROR(-20002, 'Ocurrió un error: ' || SQLERRM);
 END;
+/
 
 
+-- CURSOR DE PRODUCTOS
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_PRODUCTOS (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_PRODUCTO,NOMBRE_PRODUCTO,STOCK
+        FROM LAROATLB_PRODUCTO;
+END;
 ---------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------
 -- MANTENEDOR DE DETALLE PRODUCTO TRATAMIENTO
