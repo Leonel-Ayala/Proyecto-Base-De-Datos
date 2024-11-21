@@ -29,7 +29,8 @@ BEGIN
             APELLIDO1 = p_apellido1,
             APELLIDO2 = p_apellido2,
             ESPECIALIDAD = p_especialidad,
-            TELEFONO = p_telefono
+            TELEFONO = p_telefono,
+            EMAIL= NUEVO_CORREO}
         WHERE ID_VETERINARIO = p_id_veterinario;
     ELSIF UPPER(p_operacion) = 'D' THEN
         -- Eliminación de veterinario
@@ -213,190 +214,106 @@ END;
 
 --MANTENEDOR DE REGION
 
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_REGION_CLIENTE (
-    p_operacion    VARCHAR2,
-    p_id_region    NUMBER DEFAULT NULL,
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_REGIONES (
+    p_operacion     VARCHAR2,
+    p_id_region     NUMBER DEFAULT NULL,
     p_nombre_region VARCHAR2 DEFAULT NULL
-) 
+)
 IS
-    -- Cursor para verificar si existe una región
-    CURSOR c_region (id_region NUMBER) IS
-        SELECT ID_REGION
-        FROM LAROATLB_REGION_CLIENTE
-        WHERE ID_REGION = id_region;
-
-    -- Cursor para mostrar todas las regiones
-    CURSOR c_regiones_all IS
-        SELECT ID_REGION, NOMBRE_REGION
-        FROM LAROATLB_REGION_CLIENTE;
-
-    v_existente c_region%ROWTYPE; -- Variable para manejar datos del cursor
-
 BEGIN
-    LOCK TABLE LAROATLB_REGION_CLIENTE IN ROW EXCLUSIVE MODE;
-
-    IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todas las regiones
-        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE REGIONES ---');
-        FOR v_row IN c_regiones_all LOOP
-            DBMS_OUTPUT.PUT_LINE('ID Región: ' || v_row.ID_REGION || 
-                                 ', Nombre Región: ' || v_row.NOMBRE_REGION);
-        END LOOP;
-
-    ELSIF UPPER(p_operacion) = 'C' THEN
+    IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de una nueva región
-        -- Verificamos si ya existe la región
-        OPEN c_region(p_id_region);
-        FETCH c_region INTO v_existente;
-        IF c_region%FOUND THEN
-            DBMS_OUTPUT.PUT_LINE('La región con este ID ya existe.');
-        ELSE
-            INSERT INTO LAROATLB_REGION_CLIENTE (
-                ID_REGION, NOMBRE_REGION
-            ) VALUES (
-                p_id_region, p_nombre_region
-            );
-            DBMS_OUTPUT.PUT_LINE('Región insertada correctamente.');
-        END IF;
-        CLOSE c_region;
+        INSERT INTO LAROATLB_REGION_CLIENTE (
+            ID_REGION, NOMBRE_REGION
+        ) VALUES (
+            p_id_region, p_nombre_region
+        );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar existencia de la región
-        OPEN c_region(p_id_region);
-        FETCH c_region INTO v_existente;
-        IF c_region%FOUND THEN
-            -- Actualización de la región
-            UPDATE LAROATLB_REGION_CLIENTE
-            SET NOMBRE_REGION = p_nombre_region
-            WHERE ID_REGION = p_id_region;
-            DBMS_OUTPUT.PUT_LINE('Región actualizada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la región con el ID proporcionado.');
-        END IF;
-        CLOSE c_region;
+        -- Actualización de una región existente
+        UPDATE LAROATLB_REGION_CLIENTE
+        SET NOMBRE_REGION = p_nombre_region
+        WHERE ID_REGION = p_id_region;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar existencia de la región
-        OPEN c_region(p_id_region);
-        FETCH c_region INTO v_existente;
-        IF c_region%FOUND THEN
-            -- Eliminación de la región
-            DELETE FROM LAROATLB_REGION_CLIENTE
-            WHERE ID_REGION = p_id_region;
-            DBMS_OUTPUT.PUT_LINE('Región eliminada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la región con el ID proporcionado.');
-        END IF;
-        CLOSE c_region;
+        -- Eliminación de una región
+        DELETE FROM LAROATLB_REGION_CLIENTE
+        WHERE ID_REGION = p_id_region;
 
     ELSE
-        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
     END IF;
 
-    -- Confirmar la transacción (en caso de no estar en modo automático)
+    -- Confirmar la transacción
     COMMIT;
-
 EXCEPTION
-    WHEN PROGRAM_ERROR THEN
-        RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
 END;
-
+--------------------------------------------}
+-- CURSOR DE REGION
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_REGIONES (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_REGION, NOMBRE_REGION
+        FROM LAROATLB_REGION_CLIENTE;
+END;
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 -- MANTENEDOR DE COMUNA
-
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_COMUNA_CLIENTE (
-    p_operacion    VARCHAR2,
-    p_id_comuna    NUMBER DEFAULT NULL,
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_COMUNAS (
+    p_operacion     VARCHAR2,
+    p_id_comuna     NUMBER DEFAULT NULL,
     p_nombre_comuna VARCHAR2 DEFAULT NULL,
-    p_id_region    NUMBER DEFAULT NULL
-) 
+    p_id_region     NUMBER DEFAULT NULL
+)
 IS
-    -- Cursor para verificar si existe una comuna
-    CURSOR c_comuna (id_comuna NUMBER) IS
-        SELECT ID_COMUNA
-        FROM LAROATLB_COMUNA_CLIENTE
-        WHERE ID_COMUNA = id_comuna;
-
-    -- Cursor para mostrar todas las comunas
-    CURSOR c_comunas_all IS
-        SELECT ID_COMUNA, NOMBRE_COMUNA, ID_REGION
-        FROM LAROATLB_COMUNA_CLIENTE;
-
-    v_existente c_comuna%ROWTYPE; -- Variable para manejar datos del cursor
-
 BEGIN
-    LOCK TABLE LAROATLB_COMUNA_CLIENTE IN ROW EXCLUSIVE MODE;
-
-    IF UPPER(p_operacion) = 'R' THEN
-        -- Leer todas las comunas
-        DBMS_OUTPUT.PUT_LINE('--- LISTADO DE COMUNAS ---');
-        FOR v_row IN c_comunas_all LOOP
-            DBMS_OUTPUT.PUT_LINE('ID Comuna: ' || v_row.ID_COMUNA || 
-                                 ', Nombre Comuna: ' || v_row.NOMBRE_COMUNA || 
-                                 ', ID Región: ' || v_row.ID_REGION);
-        END LOOP;
-
-    ELSIF UPPER(p_operacion) = 'C' THEN
+    IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de una nueva comuna
-        -- Verificamos si ya existe la comuna
-        OPEN c_comuna(p_id_comuna);
-        FETCH c_comuna INTO v_existente;
-        IF c_comuna%FOUND THEN
-            DBMS_OUTPUT.PUT_LINE('La comuna con este ID ya existe.');
-        ELSE
-            INSERT INTO LAROATLB_COMUNA_CLIENTE (
-                ID_COMUNA, NOMBRE_COMUNA, ID_REGION
-            ) VALUES (
-                p_id_comuna, p_nombre_comuna, p_id_region
-            );
-            DBMS_OUTPUT.PUT_LINE('Comuna insertada correctamente.');
-        END IF;
-        CLOSE c_comuna;
+        INSERT INTO LAROATLB_COMUNA_CLIENTE (
+            ID_COMUNA, NOMBRE_COMUNA, ID_REGION
+        ) VALUES (
+            p_id_comuna, p_nombre_comuna, p_id_region
+        );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Verificar existencia de la comuna
-        OPEN c_comuna(p_id_comuna);
-        FETCH c_comuna INTO v_existente;
-        IF c_comuna%FOUND THEN
-            -- Actualización de la comuna
-            UPDATE LAROATLB_COMUNA_CLIENTE
-            SET NOMBRE_COMUNA = p_nombre_comuna,
-                ID_REGION = p_id_region
-            WHERE ID_COMUNA = p_id_comuna;
-            DBMS_OUTPUT.PUT_LINE('Comuna actualizada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la comuna con el ID proporcionado.');
-        END IF;
-        CLOSE c_comuna;
+        -- Actualización de una comuna existente
+        UPDATE LAROATLB_COMUNA_CLIENTE
+        SET NOMBRE_COMUNA = p_nombre_comuna,
+            ID_REGION = p_id_region
+        WHERE ID_COMUNA = p_id_comuna;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Verificar existencia de la comuna
-        OPEN c_comuna(p_id_comuna);
-        FETCH c_comuna INTO v_existente;
-        IF c_comuna%FOUND THEN
-            -- Eliminación de la comuna
-            DELETE FROM LAROATLB_COMUNA_CLIENTE
-            WHERE ID_COMUNA = p_id_comuna;
-            DBMS_OUTPUT.PUT_LINE('Comuna eliminada correctamente.');
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('No se encontró la comuna con el ID proporcionado.');
-        END IF;
-        CLOSE c_comuna;
+        -- Eliminación de una comuna
+        DELETE FROM LAROATLB_COMUNA_CLIENTE
+        WHERE ID_COMUNA = p_id_comuna;
 
     ELSE
-        DBMS_OUTPUT.PUT_LINE('Operación no reconocida. Use "R", "C", "U" o "D".');
+        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
     END IF;
 
-    -- Confirmar la transacción (en caso de no estar en modo automático)
+    -- Confirmar la transacción
     COMMIT;
-
 EXCEPTION
-    WHEN PROGRAM_ERROR THEN
-        RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
 END;
-
+----------------------------------------------------------------------------------
+--- CURSOR DE COMUNA
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_COMUNAS (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_COMUNA, NOMBRE_COMUNA, ID_REGION
+        FROM LAROATLB_COMUNA_CLIENTE;
+END;
 
 
 ------------------------------------------------------------------------------------------------------------------------------
