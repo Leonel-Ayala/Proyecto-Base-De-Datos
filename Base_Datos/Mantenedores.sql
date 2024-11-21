@@ -834,8 +834,57 @@ END;
 ---------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------
 -- MANTENEDOR DE USUARIOS
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_USUARIOS (
+    p_operacion      VARCHAR2,
+    p_id_usuario     NUMBER DEFAULT NULL,
+    p_nombre_usuario VARCHAR2 DEFAULT NULL,
+    p_rol_usuario    NUMBER DEFAULT NULL,
+    p_contra_usuario VARCHAR2 DEFAULT NULL
+)
+IS
+BEGIN
+    IF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de un nuevo usuario
+        INSERT INTO LAROATLB_USUARIOS (
+            ID_USUARIO, NOMBRE_USUARIO, ROL_USUARIO, CONTRA_USUARIO
+        ) VALUES (
+            p_id_usuario, p_nombre_usuario, p_rol_usuario, p_contra_usuario
+        );
+
+    ELSIF UPPER(p_operacion) = 'U' THEN
+        -- Actualización de un usuario existente
+        UPDATE LAROATLB_USUARIOS
+        SET NOMBRE_USUARIO = p_nombre_usuario,
+            ROL_USUARIO = p_rol_usuario,
+            CONTRA_USUARIO = p_contra_usuario
+        WHERE ID_USUARIO = p_id_usuario;
+
+    ELSIF UPPER(p_operacion) = 'D' THEN
+        -- Eliminación de un usuario
+        DELETE FROM LAROATLB_USUARIOS
+        WHERE ID_USUARIO = p_id_usuario;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
+    END IF;
+
+    -- Confirmar la transacción
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
+END;
 
 ---------------------
 --CURSOR USUARIOS
 
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_USUARIOS (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_USUARIO, NOMBRE_USUARIO, ROL_USUARIO, CONTRA_USUARIO
+        FROM LAROATLB_USUARIOS;
+END;
 
