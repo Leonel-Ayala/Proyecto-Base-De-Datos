@@ -30,7 +30,7 @@ BEGIN
             APELLIDO2 = p_apellido2,
             ESPECIALIDAD = p_especialidad,
             TELEFONO = p_telefono,
-            EMAIL= NUEVO_CORREO}
+            EMAIL = NUEVO_CORREO
         WHERE ID_VETERINARIO = p_id_veterinario;
     ELSIF UPPER(p_operacion) = 'D' THEN
         -- Eliminación de veterinario
