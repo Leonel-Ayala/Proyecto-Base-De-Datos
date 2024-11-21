@@ -673,7 +673,7 @@ END;
 ----------------------------------------------------------------------------------------
 --MANTENEDOR DE PRODUCTOS
 
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_PRODUCTOS (
+create or replace PROCEDURE LAROATLB_GESTIONAR_PRODUCTOS (
     p_operacion       VARCHAR2,
     p_id_producto     NUMBER DEFAULT NULL,
     p_nombre_producto VARCHAR2 DEFAULT NULL,
@@ -693,8 +693,7 @@ BEGIN
     ELSIF UPPER(p_operacion) = 'U' THEN
         -- Actualización de un producto
         UPDATE LAROATLB_PRODUCTO
-        SET NOMBRE_PRODUCTO = p_nombre_producto,
-            STOCK = p_stock
+        SET STOCK = p_stock
         WHERE ID_PRODUCTO = p_id_producto;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
