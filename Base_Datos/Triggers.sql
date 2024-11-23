@@ -208,31 +208,7 @@ BEGIN
 END;
 
 
-CREATE OR REPLACE TRIGGER trg_descuento_producto
-AFTER INSERT ON LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO
-FOR EACH ROW
-DECLARE
-    v_stock_actual NUMBER;
-BEGIN
-    -- Obtener el stock actual del producto
-    SELECT STOCK INTO v_stock_actual
-    FROM LAROATLB_PRODUCTO
-    WHERE ID_PRODUCTO = :NEW.ID_PRODUCTO;
 
-    -- Restar la cantidad utilizada
-    v_stock_actual := v_stock_actual - :NEW.CANTIDAD;
-
-    -- Actualizar la cantidad del producto en la tabla de productos
-    UPDATE LAROATLB_PRODUCTO
-    SET STOCK = v_stock_actual
-    WHERE ID_PRODUCTO = :NEW.ID_PRODUCTO;
-
-    -- Verificar si la cantidad de producto llegó a 0 o menos
-    IF v_stock_actual <= 0 THEN
-        -- Si el stock es 0 o menor, generar un error
-        RAISE_APPLICATION_ERROR(-20001, 'ALERTA: El producto ' || :NEW.ID_PRODUCTO || ' ha llegado a 0 cantidad');
-    END IF;
-END;
 --------------------------------------------------------------
 --TRIGGER DESCUENTO DE STOCK
 
