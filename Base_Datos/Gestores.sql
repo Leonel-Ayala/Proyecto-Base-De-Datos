@@ -1,4 +1,4 @@
--- MANTENEDOR DE DETALLE PRODUCTO TRATAMIENTO
+-- GESTOR DE DETALLE PRODUCTO TRATAMIENTO
 
 CREATE OR REPLACE PROCEDURE LAROATLB_REGISTRAR_DETALLE_TRATAMIENTO (
     P_ID_MASCOTA     NUMBER,
@@ -35,3 +35,8 @@ EXCEPTION
     WHEN OTHERS THEN
         p_resultado := 'Error al registrar el detalle: ' || SQLERRM;
 END;
+-----------------------------------------------------------------------------------------
+---- GESTOR DE TRATAMIENTO
+
+-----------------------------------------------------------------------------------------
+---- GESTOR DE CITA
