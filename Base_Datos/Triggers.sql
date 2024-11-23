@@ -233,6 +233,17 @@ BEGIN
         RAISE_APPLICATION_ERROR(-20001, 'ALERTA: El producto ' || :NEW.ID_PRODUCTO || ' ha llegado a 0 cantidad');
     END IF;
 END;
-/
+--------------------------------------------------------------
+--TRIGGER DESCUENTO DE STOCK
+
+CREATE OR REPLACE TRIGGER TRG_DESCONTAR_STOCK
+AFTER INSERT ON LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO
+FOR EACH ROW
+BEGIN
+    -- Actualizar el stock del producto
+    UPDATE LAROATLB_PRODUCTO
+    SET STOCK = STOCK - :NEW.CANTIDAD
+    WHERE ID_PRODUCTO = :NEW.ID_PRODUCTO;
+END;
 
 
