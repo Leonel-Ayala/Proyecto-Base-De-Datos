@@ -36,7 +36,61 @@ EXCEPTION
         p_resultado := 'Error al registrar el detalle: ' || SQLERRM;
 END;
 -----------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
 ---- GESTOR DE TRATAMIENTO
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_TRATAMIENTOS (
+    p_operacion       VARCHAR2,
+    p_id_tratamiento  NUMBER DEFAULT NULL,
+    p_descripcion     VARCHAR2 DEFAULT NULL,
+    p_fecha           DATE DEFAULT NULL,
+    p_id_mascota      NUMBER DEFAULT NULL,
+    p_id_veterinario  NUMBER DEFAULT NULL
+)
+IS
+BEGIN
+    LOCK TABLE LAROATLB_TRATAMIENTO IN ROW EXCLUSIVE MODE;
+    IF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de nuevo tratamiento
+        INSERT INTO LAROATLB_TRATAMIENTO (
+            DESCRIPCION, FECHA, ID_MASCOTA, ID_VETERINARIO
+        ) VALUES (
+            p_descripcion, p_fecha, p_id_mascota, p_id_veterinario
+        );
 
+    ELSIF UPPER(p_operacion) = 'U' THEN
+        -- Actualización de un tratamiento
+        UPDATE LAROATLB_TRATAMIENTO
+        SET DESCRIPCION = p_descripcion,
+            FECHA = p_fecha,
+            ID_MASCOTA = p_id_mascota,
+            ID_VETERINARIO = p_id_veterinario
+        WHERE ID_TRATAMIENTO = p_id_tratamiento;
+
+    ELSIF UPPER(p_operacion) = 'D' THEN
+        -- Eliminación de tratamiento
+        DELETE FROM LAROATLB_TRATAMIENTO
+        WHERE ID_TRATAMIENTO = p_id_tratamiento;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
+    END IF;
+
+    -- Confirmar la transacción
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
+END;
+--------------------------------------
+----- CURSOR TRATAMIENTO
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_TRATAMIENTOS (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_TRATAMIENTO, DESCRIPCION, FECHA, ID_MASCOTA, ID_VETERINARIO
+        FROM LAROATLB_TRATAMIENTO;
+END;
 -----------------------------------------------------------------------------------------
 ---- GESTOR DE CITA
