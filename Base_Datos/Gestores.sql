@@ -94,3 +94,62 @@ BEGIN
 END;
 -----------------------------------------------------------------------------------------
 ---- GESTOR DE CITA
+
+CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CITAS (
+    p_operacion    VARCHAR2,
+    p_id_cita      NUMBER DEFAULT NULL,
+    p_fecha        DATE DEFAULT NULL,
+    p_sala         NUMBER DEFAULT NULL,
+    p_id_mascota   NUMBER DEFAULT NULL,
+    p_id_veterinario NUMBER DEFAULT NULL
+)
+IS
+BEGIN
+    LOCK TABLE LAROATLB_CITA IN ROW EXCLUSIVE MODE;
+    IF UPPER(p_operacion) = 'C' THEN
+        -- Inserción de nueva cita
+        INSERT INTO LAROATLB_CITA (
+            FECHA, SALA, ID_MASCOTA, ID_VETERINARIO
+        ) VALUES (
+            p_fecha, p_sala, p_id_mascota, p_id_veterinario
+        );
+
+    ELSIF UPPER(p_operacion) = 'U' THEN
+        -- Actualización de una cita existente
+        UPDATE LAROATLB_CITA
+        SET FECHA = p_fecha,
+            SALA = p_sala,
+            ID_MASCOTA = p_id_mascota,
+            ID_VETERINARIO = p_id_veterinario
+        WHERE ID_CITA = p_id_cita;
+
+    ELSIF UPPER(p_operacion) = 'D' THEN
+        -- Eliminación de una cita
+        DELETE FROM LAROATLB_CITA
+        WHERE ID_CITA = p_id_cita;
+
+    ELSE
+        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
+    END IF;
+
+    -- Confirmar la transacción
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
+END;
+--------------------------------------------------------------------
+---------CURSOR DE CITA
+
+CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_CITAS (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT c.ID_CITA, c.FECHA, c.SALA, m.NOMBRE AS MASCOTA, v.NOMBRE AS VETERINARIO
+        FROM LAROATLB_CITA c
+        JOIN LAROATLB_MASCOTA m ON c.ID_MASCOTA = m.ID_MASCOTA
+        JOIN LAROATLB_VETERINARIO v ON c.ID_VETERINARIO = v.ID_VETERINARIO;
+END;
+
