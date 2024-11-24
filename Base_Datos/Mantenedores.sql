@@ -139,11 +139,17 @@ CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CLIENTES (
     p_apellido1   VARCHAR2 DEFAULT NULL,
     p_apellido2   VARCHAR2 DEFAULT NULL,
     p_telefono    NUMBER DEFAULT NULL,
-    p_id_calle    NUMBER DEFAULT NULL
+    p_nombre_calle    NUMBER DEFAULT NULL,
+    p_numero_casa    NUMBER DEFAULT NULL
 )
 IS
+    p_id_calle number:=0;
 BEGIN
     LOCK TABLE LAROATLB_CLIENTE IN ROW EXCLUSIVE MODE;
+    
+    SELECT ID_CALLE INTO p_id_calle
+        FROM LAROATLB_CALLE_CLIENTE
+        WHERE NOMBRE_CALLE=p_nombre_calle AND NUMERO_CASA=p_numero_casa;
 
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de un nuevo cliente
