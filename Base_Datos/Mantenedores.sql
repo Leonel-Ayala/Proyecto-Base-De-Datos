@@ -152,7 +152,7 @@ BEGIN
     INTO p_id_calle
     FROM LAROATLB_CALLE_CLIENTE
     WHERE NOMBRE_CALLE = p_nombre_calle 
-      AND NUMERO_CALLE = p_numero_casa
+      AND NUMERO_CASA = p_numero_casa
     FETCH FIRST 1 ROWS ONLY; -- Devuelve solo la primera fila
 
     IF UPPER(p_operacion) = 'C' THEN
