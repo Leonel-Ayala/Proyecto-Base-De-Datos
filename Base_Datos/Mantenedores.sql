@@ -143,20 +143,24 @@ CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CLIENTES (
     p_numero_casa    NUMBER DEFAULT NULL
 )
 IS
-    p_id_calle number:=0;
+    p_id_calle NUMBER := 0;
 BEGIN
     LOCK TABLE LAROATLB_CLIENTE IN ROW EXCLUSIVE MODE;
-    
-    SELECT ID_CALLE INTO p_id_calle
-        FROM LAROATLB_CALLE_CLIENTE
-        WHERE NOMBRE_CALLE=p_nombre_calle AND NUMERO_CASA=p_numero_casa;
+
+    -- Ajuste: Obtener la primera fila encontrada explícitamente
+    SELECT ID_CALLE 
+    INTO p_id_calle
+    FROM LAROATLB_CALLE_CLIENTE
+    WHERE NOMBRE_CALLE = p_nombre_calle 
+      AND NUMERO_CALLE = p_numero_casa
+    FETCH FIRST 1 ROWS ONLY; -- Devuelve solo la primera fila
 
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de un nuevo cliente
         INSERT INTO LAROATLB_CLIENTE (
-            ID_CLIENTE, RUT, NOMBRE, APELLIDO1, APELLIDO2, TELEFONO, ID_CALLE
+            RUT, NOMBRE, APELLIDO1, APELLIDO2, TELEFONO, ID_CALLE
         ) VALUES (
-            p_id_cliente, p_rut, p_nombre, p_apellido1, p_apellido2, p_telefono, p_id_calle
+            p_rut, p_nombre, p_apellido1, p_apellido2, p_telefono, p_id_calle
         );
     ELSIF UPPER(p_operacion) = 'U' THEN
         -- Actualización de un cliente existente
@@ -182,6 +186,7 @@ EXCEPTION
         ROLLBACK;
         RAISE_APPLICATION_ERROR(-20002, 'Error al gestionar cliente: ' || SQLERRM);
 END;
+
 
 
 -------------------------------------------
