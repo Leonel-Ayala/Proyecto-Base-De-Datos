@@ -30,10 +30,8 @@ BEGIN
     
 
 EXCEPTION
-    WHEN NO_DATA_FOUND THEN
-        p_resultado := 'No se encontró un tratamiento para la mascota especificada en la fecha actual.';
     WHEN OTHERS THEN
-        p_resultado := 'Error al registrar el detalle: ' || SQLERRM;
+        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
 END;
 -----------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------
