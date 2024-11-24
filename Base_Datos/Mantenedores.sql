@@ -139,7 +139,7 @@ CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CLIENTES (
     p_apellido1   VARCHAR2 DEFAULT NULL,
     p_apellido2   VARCHAR2 DEFAULT NULL,
     p_telefono    NUMBER DEFAULT NULL,
-    p_nombre_calle    NUMBER DEFAULT NULL,
+    p_nombre_calle    VARCHAR2 DEFAULT NULL,
     p_numero_casa    NUMBER DEFAULT NULL
 )
 IS
