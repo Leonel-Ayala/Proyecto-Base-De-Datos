@@ -1,4 +1,5 @@
--- Consulta De citas Veterinario
+-----------------------------------------------------------------------------
+------------REPORTE DE CITAS POR VETERINARIO
 
 CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_CITAS_POR_VETERINARIO (
     p_fecha        DATE,
@@ -24,9 +25,9 @@ BEGIN
 END;
 
 
-
--- Consulta Ficha Clinica Mascota
-CREATE OR REPLACE PROCEDURE LAROATLB_OBTENER_FICHA_COMPLETA (
+-------------------------------------------------------
+----------REPORTE FICHA CLINICA
+create or replace PROCEDURE LAROATLB_OBTENER_FICHA_COMPLETA (
     p_id_mascota IN NUMBER,
     p_ficha OUT SYS_REFCURSOR,
     p_tratamientos OUT SYS_REFCURSOR
@@ -42,7 +43,7 @@ BEGIN
             R.NOMBRE_RAZA,
             E.NOMBRE_ESPECIE,
             C.NOMBRE AS NOMBRE_CLIENTE,
-            C.TELEFONO AS TELEFONO_CLIENTE,
+            C.TELEFONO AS TELEFONO_CLIENTE
         FROM LAROATLB_MASCOTA M
         JOIN LAROATLB_RAZA R ON M.ID_RAZA = R.ID_RAZA
         JOIN LAROATLB_ESPECIE E ON R.ID_ESPECIE = E.ID_ESPECIE
@@ -60,33 +61,10 @@ BEGIN
 END;
 
 
+
 ----------------------------
 
---------------------------------------------------------------------------
-
---- REPORTE PRODUCTOS MAS USADOS
-
-CREATE OR REPLACE PROCEDURE LAROATLB_Reporte_Productos_Mas_Usados (
-    p_cursor OUT SYS_REFCURSOR
-)
-AS
-BEGIN
-    OPEN p_cursor FOR
-        SELECT 
-            P.ID_Producto,
-            P.Nombre_Producto,
-            SUM(DPT.Cantidad) AS Total_Usado
-        FROM 
-            LAROATLB_Producto P
-        JOIN 
-            LAROATLB_Detalle_Producto_Tratamiento DPT
-            ON P.ID_Producto = DPT.ID_Producto
-        GROUP BY 
-            P.ID_Producto, P.Nombre_Producto
-        ORDER BY 
-            Total_Usado DESC;
-END;
-------------------------------------------
+--------------------------------------------------------------------------------------------------------
 --REPORTE  MAYOR CANTIDAD DE INGRESOS
 
 CREATE OR REPLACE PROCEDURE LAROATLB_AGRUPAR_INGRESOS (
