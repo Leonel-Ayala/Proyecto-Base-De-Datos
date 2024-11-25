@@ -809,9 +809,9 @@ BEGIN
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de un nuevo usuario
         INSERT INTO LAROATLB_USUARIOS (
-            ID_USUARIO, NOMBRE_USUARIO, ROL_USUARIO, CONTRA_USUARIO
+            NOMBRE_USUARIO, ROL_USUARIO, CONTRA_USUARIO
         ) VALUES (
-            p_id_usuario, p_nombre_usuario, p_rol_usuario, p_contra_usuario
+            p_nombre_usuario, p_rol_usuario, p_contra_usuario
         );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
