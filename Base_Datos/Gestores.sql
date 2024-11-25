@@ -37,6 +37,18 @@ EXCEPTION
 END;
 
 -----------------------------------------------------------------------------------------
+
+create or replace  PROCEDURE LAROATLB_LISTAR_DETALLE_PRODUCTO_TRATAMIENTO (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_TRATAMIENTO, ID_PRODUCTO, CANTIDAD
+        FROM LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO;
+END;
+
+
 -----------------------------------------------------------------------------------------
 ---- GESTOR DE TRATAMIENTO
 CREATE OR REPLACE PROCEDURE LAROATLB_INSERTA_TRATAMIENTOS (
@@ -60,19 +72,7 @@ EXCEPTION
     WHEN OTHERS THEN
         RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
 END;
-------------------------------------------------------------------------------------------------
-
-create or replace  PROCEDURE LAROATLB_LISTAR_DETALLE_PRODUCTO_TRATAMIENTO (
-    p_cursor OUT SYS_REFCURSOR
-)
-IS
-BEGIN
-    OPEN p_cursor FOR
-        SELECT ID_TRATAMIENTO, ID_PRODUCTO, CANTIDAD
-        FROM LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO;
-END;
-
-
+-----------------------------------------------------------------------------------------------
 --------------------------------------
 ----- CURSOR TRATAMIENTO
 CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_TRATAMIENTOS (
