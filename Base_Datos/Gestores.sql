@@ -37,7 +37,6 @@ END;
 -----------------------------------------------------------------------------------------
 ---- GESTOR DE TRATAMIENTO
 CREATE OR REPLACE PROCEDURE LAROATLB_INSERTA_TRATAMIENTOS (
-    p_id_tratamiento  NUMBER DEFAULT NULL,
     p_descripcion     VARCHAR2 DEFAULT NULL,
     p_id_mascota      NUMBER DEFAULT NULL,
     p_id_veterinario  NUMBER DEFAULT NULL
