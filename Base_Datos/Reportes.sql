@@ -67,7 +67,7 @@ END;
 --------------------------------------------------------------------------------------------------------
 --REPORTE  MAYOR CANTIDAD DE INGRESOS
 
-CREATE OR REPLACE PROCEDURE LAROATLB_AGRUPAR_INGRESOS (
+create or replace  PROCEDURE LAROATLB_AGRUPAR_INGRESOS (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
@@ -83,6 +83,7 @@ BEGIN
         ORDER BY 
             CANTIDAD_INGRESOS DESC; -- Opcional: Ordenar por cantidad de ingresos
 END;
+
 
 -------------------------------------------------------------------------------------
 
