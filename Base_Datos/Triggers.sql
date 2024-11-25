@@ -14,33 +14,6 @@ BEGIN
     :NEW.EMAIL := UPPER(:NEW.EMAIL);
 END;
 
-
-------------------------------------------------------------------------------------------------
-create or replace  TRIGGER LAROATLB_DESCONTAR_STOCK
-BEFORE INSERT ON LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO
-FOR EACH ROW
-DECLARE
-    v_stock_actual NUMBER;
-BEGIN
-    -- Recuperar el stock actual del producto
-    SELECT STOCK
-    INTO v_stock_actual
-    FROM LAROATLB_PRODUCTO
-    WHERE ID_PRODUCTO = :NEW.ID_PRODUCTO;
-
-    -- Verificar si la cantidad a restar es válida
-    IF v_stock_actual >= :NEW.CANTIDAD THEN
-        -- Actualizar el stock del producto
-        UPDATE LAROATLB_PRODUCTO
-        SET STOCK = STOCK - :NEW.CANTIDAD
-        WHERE ID_PRODUCTO = :NEW.ID_PRODUCTO;
-    ELSE
-        -- Si no hay suficiente stock, lanzar un error
-        RAISE_APPLICATION_ERROR(-20001, 'No hay suficiente stock para el producto ' || :NEW.ID_PRODUCTO);
-    END IF;
-END;
-
-
 ------------------------------------------------------------------------------------------------
 create or replace  TRIGGER LAROATLB_ID_CALLE_CLIENTE
   BEFORE INSERT 
