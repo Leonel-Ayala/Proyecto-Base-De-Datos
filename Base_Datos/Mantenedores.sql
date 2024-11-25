@@ -2,7 +2,7 @@
 ------------------------------------------------------------------------------------------------------------------------------
 -- MANTENEDOR PARA VETERINARIO
 
-create or replace NONEDITIONABLE PROCEDURE LAROATLB_GESTIONAR_VETERINARIOS (
+create or replace  PROCEDURE LAROATLB_GESTIONAR_VETERINARIOS (
     p_operacion       VARCHAR2,
     p_id_veterinario  NUMBER DEFAULT NULL,
     p_nombre          VARCHAR2 DEFAULT NULL,
@@ -45,6 +45,7 @@ EXCEPTION
     WHEN PROGRAM_ERROR THEN
         RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
 END;
+
 ------------------------
 --CURSOR LISTAR VETERINARIO
 
@@ -61,7 +62,7 @@ END;
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE SECRETARIA
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_SECRETARIAS (
+create or replace PROCEDURE LAROATLB_GESTIONAR_SECRETARIAS (
     p_operacion       VARCHAR2,
     p_id_secretaria   NUMBER DEFAULT NULL,
     p_nombre          VARCHAR2 DEFAULT NULL,
@@ -77,7 +78,7 @@ BEGIN
     NUEVO_CORREO := LAROATLB_GENERA_CORREO_SECRE(p_nombre, p_apellido1, p_apellido2);
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción
-        
+
         INSERT INTO LAROATLB_SECRETARIA (
             NOMBRE, APELLIDO1, APELLIDO2, TELEFONO, EMAIL
         ) VALUES (
@@ -86,7 +87,7 @@ BEGIN
 
     ELSIF UPPER(p_operacion) = 'U' THEN
         -- Actualización
-        
+
         UPDATE LAROATLB_SECRETARIA
         SET NOMBRE = p_nombre,
             APELLIDO1 = p_apellido1,
@@ -112,6 +113,7 @@ EXCEPTION
     WHEN PROGRAM_ERROR THEN
         RAISE_APPLICATION_ERROR(-6501, 'ERROR DE PROGRAMA');
 END;
+
 ------------------------
 --- CURSOR PARA LISTAR SECRE
 
@@ -131,7 +133,7 @@ END;
 
 --MANTENEDOR CLIENTE
 
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CLIENTES (
+create or replace  PROCEDURE LAROATLB_GESTIONAR_CLIENTES (
     p_operacion   VARCHAR2,
     p_id_cliente  NUMBER DEFAULT NULL,
     p_rut         NUMBER DEFAULT NULL,
@@ -148,15 +150,15 @@ BEGIN
     LOCK TABLE LAROATLB_CLIENTE IN ROW EXCLUSIVE MODE;
 
     -- Ajuste: Obtener la primera fila encontrada explícitamente
-    SELECT ID_CALLE 
-    INTO p_id_calle
-    FROM LAROATLB_CALLE_CLIENTE
-    WHERE NOMBRE_CALLE = p_nombre_calle 
-      AND NUMERO_CASA = p_numero_casa
-    FETCH FIRST 1 ROWS ONLY; -- Devuelve solo la primera fila
 
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de un nuevo cliente
+        SELECT ID_CALLE 
+        INTO p_id_calle
+        FROM LAROATLB_CALLE_CLIENTE
+        WHERE NOMBRE_CALLE = p_nombre_calle 
+          AND NUMERO_CASA = p_numero_casa
+        FETCH FIRST 1 ROWS ONLY; -- Devuelve solo la primera fila
         INSERT INTO LAROATLB_CLIENTE (
             RUT, NOMBRE, APELLIDO1, APELLIDO2, TELEFONO, ID_CALLE
         ) VALUES (
@@ -169,8 +171,8 @@ BEGIN
             NOMBRE = p_nombre,
             APELLIDO1 = p_apellido1,
             APELLIDO2 = p_apellido2,
-            TELEFONO = p_telefono,
-            ID_CALLE = p_id_calle
+            TELEFONO = p_telefono
+
         WHERE ID_CLIENTE = p_id_cliente;
     ELSIF UPPER(p_operacion) = 'D' THEN
         -- Eliminación de un cliente
@@ -186,6 +188,7 @@ EXCEPTION
         ROLLBACK;
         RAISE_APPLICATION_ERROR(-20002, 'Error al gestionar cliente: ' || SQLERRM);
 END;
+
 
 
 
@@ -222,7 +225,7 @@ END;
 
 --MANTENEDOR DE REGION
 
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_REGIONES (
+create or replace  PROCEDURE LAROATLB_GESTIONAR_REGIONES (
     p_operacion     VARCHAR2,
     p_id_region     NUMBER DEFAULT NULL,
     p_nombre_region VARCHAR2 DEFAULT NULL
@@ -233,9 +236,9 @@ BEGIN
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de una nueva región
         INSERT INTO LAROATLB_REGION_CLIENTE (
-            ID_REGION, NOMBRE_REGION
+             NOMBRE_REGION
         ) VALUES (
-            p_id_region, p_nombre_region
+             p_nombre_region
         );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
@@ -259,6 +262,8 @@ EXCEPTION
     WHEN OTHERS THEN
         RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
 END;
+
+
 --------------------------------------------}
 -- CURSOR DE REGION
 CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_REGIONES (
@@ -274,7 +279,7 @@ END;
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 -- MANTENEDOR DE COMUNA
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_COMUNAS (
+create or replace  PROCEDURE LAROATLB_GESTIONAR_COMUNAS (
     p_operacion     VARCHAR2,
     p_id_comuna     NUMBER DEFAULT NULL,
     p_nombre_comuna VARCHAR2 DEFAULT NULL,
@@ -286,9 +291,9 @@ BEGIN
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de una nueva comuna
         INSERT INTO LAROATLB_COMUNA_CLIENTE (
-            ID_COMUNA, NOMBRE_COMUNA, ID_REGION
+            NOMBRE_COMUNA, ID_REGION
         ) VALUES (
-            p_id_comuna, p_nombre_comuna, p_id_region
+            p_nombre_comuna, p_id_region
         );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
@@ -329,7 +334,7 @@ END;
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 -- MANTENEDOR DE CALLES CLIENTE
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CALLES (
+create or replace  PROCEDURE LAROATLB_GESTIONAR_CALLES (
     p_operacion     VARCHAR2,
     p_id_calle      NUMBER DEFAULT NULL,
     p_nombre_calle  VARCHAR2 DEFAULT NULL,
@@ -342,16 +347,16 @@ BEGIN
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de una nueva calle
         INSERT INTO LAROATLB_CALLE_CLIENTE (
-            ID_CALLE, NOMBRE_CALLE, NUMERO_CALLE, ID_COMUNA
+             NOMBRE_CALLE, NUMERO_CASA, ID_COMUNA
         ) VALUES (
-            p_id_calle, p_nombre_calle, p_numero_calle, p_id_comuna
+            p_nombre_calle, p_numero_calle, p_id_comuna
         );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
         -- Actualización de una calle existente
         UPDATE LAROATLB_CALLE_CLIENTE
         SET NOMBRE_CALLE = p_nombre_calle,
-            NUMERO_CALLE = p_numero_calle,
+            NUMERO_CASA = p_numero_calle,
             ID_COMUNA = p_id_comuna
         WHERE ID_CALLE = p_id_calle;
 
@@ -387,7 +392,7 @@ END;
 ------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE RAZA
 
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_RAZAS (
+create or replace  PROCEDURE LAROATLB_GESTIONAR_RAZAS (
     p_operacion    VARCHAR2,
     p_id_raza      NUMBER DEFAULT NULL,
     p_nombre_raza  VARCHAR2 DEFAULT NULL,
@@ -399,16 +404,15 @@ BEGIN
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de una nueva raza
         INSERT INTO LAROATLB_RAZA (
-            ID_RAZA, NOMBRE_RAZA, ID_ESPECIE
+             NOMBRE_RAZA, ID_ESPECIE
         ) VALUES (
-            p_id_raza, p_nombre_raza, p_id_especie
+             p_nombre_raza, p_id_especie
         );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
         -- Actualización de una raza existente
         UPDATE LAROATLB_RAZA
-        SET NOMBRE_RAZA = p_nombre_raza,
-            ID_ESPECIE = p_id_especie
+        SET NOMBRE_RAZA = p_nombre_raza
         WHERE ID_RAZA = p_id_raza;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
@@ -426,6 +430,7 @@ EXCEPTION
     WHEN OTHERS THEN
         RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
 END;
+
 
 ------------------------------------------
 ----------CURSOR DE RAZA
@@ -455,9 +460,9 @@ BEGIN
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de una nueva especie
         INSERT INTO LAROATLB_ESPECIE (
-            ID_ESPECIE, NOMBRE_ESPECIE
+            NOMBRE_ESPECIE
         ) VALUES (
-            p_id_especie, p_nombre_especie
+            p_nombre_especie
         );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
@@ -497,7 +502,7 @@ END;
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE MASCOTA
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_MASCOTAS (
+create or replace  PROCEDURE LAROATLB_GESTIONAR_MASCOTAS (
     p_operacion    VARCHAR2,
     p_id_mascota   NUMBER DEFAULT NULL,
     p_nombre       VARCHAR2 DEFAULT NULL,
@@ -511,18 +516,16 @@ BEGIN
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de una nueva mascota
         INSERT INTO LAROATLB_MASCOTA (
-            ID_MASCOTA, NOMBRE, EDAD, ID_CLIENTE, ID_RAZA
+             NOMBRE, EDAD, ID_CLIENTE, ID_RAZA
         ) VALUES (
-            p_id_mascota, p_nombre, p_edad, p_id_cliente, p_id_raza
+             p_nombre, p_edad, p_id_cliente, p_id_raza
         );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
         -- Actualización de una mascota existente
         UPDATE LAROATLB_MASCOTA
         SET NOMBRE = p_nombre,
-            EDAD = p_edad,
-            ID_CLIENTE = p_id_cliente,
-            ID_RAZA = p_id_raza
+            EDAD = p_edad
         WHERE ID_MASCOTA = p_id_mascota;
 
     ELSIF UPPER(p_operacion) = 'D' THEN
@@ -555,136 +558,12 @@ BEGIN
 END;
 
 
-------------------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------------------
---MANTENEDOR DE CITA
-
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CITAS (
-    p_operacion    VARCHAR2,
-    p_id_cita      NUMBER DEFAULT NULL,
-    p_fecha        DATE DEFAULT NULL,
-    p_sala         NUMBER DEFAULT NULL,
-    p_id_mascota   NUMBER DEFAULT NULL,
-    p_id_veterinario NUMBER DEFAULT NULL
-)
-IS
-BEGIN
-    LOCK TABLE LAROATLB_CITA IN ROW EXCLUSIVE MODE;
-    IF UPPER(p_operacion) = 'C' THEN
-        -- Inserción de nueva cita
-        INSERT INTO LAROATLB_CITA (
-            ID_CITA, FECHA, SALA, ID_MASCOTA, ID_VETERINARIO
-        ) VALUES (
-            p_id_cita, p_fecha, p_sala, p_id_mascota, p_id_veterinario
-        );
-
-    ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Actualización de una cita existente
-        UPDATE LAROATLB_CITA
-        SET FECHA = p_fecha,
-            SALA = p_sala,
-            ID_MASCOTA = p_id_mascota,
-            ID_VETERINARIO = p_id_veterinario
-        WHERE ID_CITA = p_id_cita;
-
-    ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Eliminación de una cita
-        DELETE FROM LAROATLB_CITA
-        WHERE ID_CITA = p_id_cita;
-
-    ELSE
-        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
-    END IF;
-
-    -- Confirmar la transacción
-    COMMIT;
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
-END;
---------------------------------------------------------------------
----------CURSOR DE CITA
-
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_CITAS (
-    p_cursor OUT SYS_REFCURSOR
-)
-IS
-BEGIN
-    OPEN p_cursor FOR
-        SELECT c.ID_CITA, c.FECHA, c.SALA, m.NOMBRE AS MASCOTA, v.NOMBRE AS VETERINARIO
-        FROM LAROATLB_CITA c
-        JOIN LAROATLB_MASCOTA m ON c.ID_MASCOTA = m.ID_MASCOTA
-        JOIN LAROATLB_VETERINARIO v ON c.ID_VETERINARIO = v.ID_VETERINARIO;
-END;
 
 
-
-------------------------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------------------
---MANTENEDOR DE TRATAMIENTOS
-
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_TRATAMIENTOS (
-    p_operacion       VARCHAR2,
-    p_id_tratamiento  NUMBER DEFAULT NULL,
-    p_descripcion     VARCHAR2 DEFAULT NULL,
-    p_fecha           DATE DEFAULT NULL,
-    p_id_mascota      NUMBER DEFAULT NULL,
-    p_id_veterinario  NUMBER DEFAULT NULL
-)
-IS
-BEGIN
-    LOCK TABLE LAROATLB_TRATAMIENTO IN ROW EXCLUSIVE MODE;
-    IF UPPER(p_operacion) = 'C' THEN
-        -- Inserción de nuevo tratamiento
-        INSERT INTO LAROATLB_TRATAMIENTO (
-            ID_TRATAMIENTO, DESCRIPCION, FECHA, ID_MASCOTA, ID_VETERINARIO
-        ) VALUES (
-            p_id_tratamiento, p_descripcion, p_fecha, p_id_mascota, p_id_veterinario
-        );
-
-    ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Actualización de un tratamiento
-        UPDATE LAROATLB_TRATAMIENTO
-        SET DESCRIPCION = p_descripcion,
-            FECHA = p_fecha,
-            ID_MASCOTA = p_id_mascota,
-            ID_VETERINARIO = p_id_veterinario
-        WHERE ID_TRATAMIENTO = p_id_tratamiento;
-
-    ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Eliminación de tratamiento
-        DELETE FROM LAROATLB_TRATAMIENTO
-        WHERE ID_TRATAMIENTO = p_id_tratamiento;
-
-    ELSE
-        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
-    END IF;
-
-    -- Confirmar la transacción
-    COMMIT;
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
-END;
---------------------------------------
------ CURSOR TRATAMIENTO
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_TRATAMIENTOS (
-    p_cursor OUT SYS_REFCURSOR
-)
-IS
-BEGIN
-    OPEN p_cursor FOR
-        SELECT ID_TRATAMIENTO, DESCRIPCION, FECHA, ID_MASCOTA, ID_VETERINARIO
-        FROM LAROATLB_TRATAMIENTO;
-END;
-
-
-
--------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 --MANTENEDOR DE PRODUCTOS
 
-create or replace PROCEDURE LAROATLB_GESTIONAR_PRODUCTOS (
+create or replace  PROCEDURE LAROATLB_GESTIONAR_PRODUCTOS (
     p_operacion       VARCHAR2,
     p_id_producto     NUMBER DEFAULT NULL,
     p_nombre_producto VARCHAR2 DEFAULT NULL,
@@ -696,9 +575,9 @@ BEGIN
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de nuevo producto
         INSERT INTO LAROATLB_PRODUCTO (
-            ID_PRODUCTO, NOMBRE_PRODUCTO, STOCK
+            NOMBRE_PRODUCTO, STOCK
         ) VALUES (
-            p_id_producto, p_nombre_producto, p_stock
+            p_nombre_producto, p_stock
         );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
@@ -737,66 +616,11 @@ BEGIN
 END;
 
 
----------------------------------------------------------------------------------
-----------------------------------------------------------------------------------
--- MANTENEDOR DE LOG LOGIN
 
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_LOG_LOGIN (
-    p_operacion       VARCHAR2,
-    p_id_login        NUMBER DEFAULT NULL,
-    p_nombre_ingreso  VARCHAR2 DEFAULT NULL,
-    p_fecha_ingreso   DATE DEFAULT NULL
-)
-IS
-BEGIN
-    LOCK TABLE LAROATLB_LOG_LOGIN IN ROW EXCLUSIVE MODE;
-    IF UPPER(p_operacion) = 'C' THEN
-        -- Inserción de un nuevo registro en el log de login
-        INSERT INTO LAROATLB_LOG_LOGIN (
-            NOMBRE_INGRESO, FECHA_INGRESO
-        ) VALUES (
-            p_nombre_ingreso, p_fecha_ingreso
-        );
-
-    ELSIF UPPER(p_operacion) = 'U' THEN
-        -- Actualización de un registro existente en el log de login
-        UPDATE LAROATLB_LOG_LOGIN
-        SET NOMBRE_INGRESO = p_nombre_ingreso,
-            FECHA_INGRESO = p_fecha_ingreso
-        WHERE ID_LOGIN = p_id_login;
-
-    ELSIF UPPER(p_operacion) = 'D' THEN
-        -- Eliminación de un registro del log de login
-        DELETE FROM LAROATLB_LOG_LOGIN
-        WHERE ID_LOGIN = p_id_login;
-
-    ELSE
-        RAISE_APPLICATION_ERROR(-20002, 'Operación no válida. Use "C", "U" o "D".');
-    END IF;
-
-    -- Confirmar la transacción
-    COMMIT;
-EXCEPTION
-    WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
-END;
-
----------------------------------------------------------
---------CURSOR LOG LOGIN
-
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_LOG_LOGIN (
-    p_cursor OUT SYS_REFCURSOR
-)
-IS
-BEGIN
-    OPEN p_cursor FOR
-        SELECT ID_LOGIN, NOMBRE_INGRESO, FECHA_INGRESO
-        FROM LAROATLB_LOG_LOGIN;
-END;
 ---------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------
 -- MANTENEDOR DE USUARIOS
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_USUARIOS (
+create or replace  PROCEDURE LAROATLB_GESTIONAR_USUARIOS (
     p_operacion      VARCHAR2,
     p_id_usuario     NUMBER DEFAULT NULL,
     p_nombre_usuario VARCHAR2 DEFAULT NULL,
@@ -809,9 +633,9 @@ BEGIN
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de un nuevo usuario
         INSERT INTO LAROATLB_USUARIOS (
-            NOMBRE_USUARIO, ROL_USUARIO, CONTRA_USUARIO
+             NOMBRE_USUARIO, ROL_USUARIO, CONTRA_USUARIO
         ) VALUES (
-            p_nombre_usuario, p_rol_usuario, p_contra_usuario
+             p_nombre_usuario, p_rol_usuario, p_contra_usuario
         );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
