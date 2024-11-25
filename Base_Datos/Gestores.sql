@@ -1,6 +1,6 @@
 -- GESTOR DE DETALLE PRODUCTO TRATAMIENTO
 
-CREATE OR REPLACE PROCEDURE LAROATLB_REGISTRAR_DETALLE_TRATAMIENTO (
+create or replace PROCEDURE LAROATLB_REGISTRAR_DETALLE_TRATAMIENTO (
     P_ID_MASCOTA     NUMBER,
     P_ID_PRODUCTO    NUMBER,
     P_CANTIDAD       NUMBER
@@ -27,12 +27,15 @@ BEGIN
         P_ID_PRODUCTO,
         P_CANTIDAD
     );
-    
+
 
 EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RAISE_APPLICATION_ERROR(-20001,'No se encontró un tratamiento para la mascota especificada en la fecha actual');
     WHEN OTHERS THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
+        RAISE_APPLICATION_ERROR(-20001,'Error al registrar el detalle: ' || SQLERRM);
 END;
+
 -----------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------
 ---- GESTOR DE TRATAMIENTO
@@ -57,6 +60,19 @@ EXCEPTION
     WHEN OTHERS THEN
         RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
 END;
+------------------------------------------------------------------------------------------------
+
+create or replace  PROCEDURE LAROATLB_LISTAR_DETALLE_PRODUCTO_TRATAMIENTO (
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT ID_TRATAMIENTO, ID_PRODUCTO, CANTIDAD
+        FROM LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO;
+END;
+
+
 --------------------------------------
 ----- CURSOR TRATAMIENTO
 CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_TRATAMIENTOS (
@@ -132,13 +148,16 @@ END;
 --------------------------------------------
 ----------------------------------
 --- GESTOR LOG LOGIN
-CREATE OR REPLACE PROCEDURE LAROATLB_INGRESA_LOG_LOGIN(
+------------------------------------------------------------------------------------------------
+
+create or replace  PROCEDURE LAROATLB_INGRESA_LOG_LOGIN(
     P_NOMBRE_USUARIO VARCHAR2)
 IS
 BEGIN
     INSERT INTO LAROATLB_LOG_LOGIN(ID_LOGIN,NOMBRE_INGRESO,FECHA_INGRESO)
     VALUES(SEQ_LAROATLB_LOG_LOGIN.NEXTVAL, P_NOMBRE_USUARIO,SYSDATE);
 END;
+
 
 --------------------------------------------
 ----------------------------------
