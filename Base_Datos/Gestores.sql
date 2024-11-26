@@ -62,7 +62,7 @@ BEGIN
         INSERT INTO LAROATLB_TRATAMIENTO (
             DESCRIPCION, FECHA, ID_MASCOTA, ID_VETERINARIO
         ) VALUES (
-            p_descripcion, p_fecha, p_id_mascota, p_id_veterinario
+            p_descripcion, SYSDATE, p_id_mascota, p_id_veterinario
         );
 
  
