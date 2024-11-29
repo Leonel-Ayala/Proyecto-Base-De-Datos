@@ -36,22 +36,25 @@ EXCEPTION
         RAISE_APPLICATION_ERROR(-20001,'Error al registrar el detalle: ' || SQLERRM);
 END;
 
+
 -----------------------------------------------------------------------------------------
 
-create or replace  PROCEDURE LAROATLB_LISTAR_DETALLE_PRODUCTO_TRATAMIENTO (
+create or replace PROCEDURE LAROATLB_LISTAR_DETALLE_PRODUCTO_TRATAMIENTO (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
 BEGIN
     OPEN p_cursor FOR
         SELECT ID_TRATAMIENTO, ID_PRODUCTO, CANTIDAD
-        FROM LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO;
+        FROM LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO
+        ORDER BY 1 ASC;
 END;
 
 
 -----------------------------------------------------------------------------------------
 ---- GESTOR DE TRATAMIENTO
-CREATE OR REPLACE PROCEDURE LAROATLB_INSERTA_TRATAMIENTOS (
+
+create or replace PROCEDURE LAROATLB_INSERTA_TRATAMIENTOS (
     p_descripcion     VARCHAR2 DEFAULT NULL,
     p_id_mascota      NUMBER DEFAULT NULL,
     p_id_veterinario  NUMBER DEFAULT NULL
@@ -65,7 +68,7 @@ BEGIN
             p_descripcion, SYSDATE, p_id_mascota, p_id_veterinario
         );
 
- 
+
     -- Confirmar la transacción
     COMMIT;
 EXCEPTION
@@ -75,19 +78,22 @@ END;
 -----------------------------------------------------------------------------------------------
 --------------------------------------
 ----- CURSOR TRATAMIENTO
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_TRATAMIENTOS (
+create or replace PROCEDURE LAROATLB_LISTAR_TRATAMIENTOS (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
 BEGIN
     OPEN p_cursor FOR
         SELECT ID_TRATAMIENTO, DESCRIPCION, FECHA, ID_MASCOTA, ID_VETERINARIO
-        FROM LAROATLB_TRATAMIENTO;
+        FROM LAROATLB_TRATAMIENTO
+        ORDER BY 1 ASC;
 END;
+
 -----------------------------------------------------------------------------------------
 ---- GESTOR DE CITA
 
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_CITAS (
+
+create or replace PROCEDURE LAROATLB_GESTIONAR_CITAS (
     p_operacion    VARCHAR2,
     p_id_cita      NUMBER DEFAULT NULL,
     p_fecha        DATE DEFAULT NULL,
@@ -101,9 +107,9 @@ BEGIN
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de nueva cita
         INSERT INTO LAROATLB_CITA (
-            FECHA, SALA, ID_MASCOTA, ID_VETERINARIO
+             FECHA, SALA, ID_MASCOTA, ID_VETERINARIO
         ) VALUES (
-            p_fecha, p_sala, p_id_mascota, p_id_veterinario
+             p_fecha, p_sala, p_id_mascota, p_id_veterinario
         );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
@@ -133,7 +139,7 @@ END;
 --------------------------------------------------------------------
 ---------CURSOR DE CITA
 
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_CITAS (
+create or replace PROCEDURE LAROATLB_LISTAR_CITAS (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
@@ -142,15 +148,17 @@ BEGIN
         SELECT c.ID_CITA, c.FECHA, c.SALA, m.NOMBRE AS MASCOTA, v.NOMBRE AS VETERINARIO
         FROM LAROATLB_CITA c
         JOIN LAROATLB_MASCOTA m ON c.ID_MASCOTA = m.ID_MASCOTA
-        JOIN LAROATLB_VETERINARIO v ON c.ID_VETERINARIO = v.ID_VETERINARIO;
+        JOIN LAROATLB_VETERINARIO v ON c.ID_VETERINARIO = v.ID_VETERINARIO
+        ORDER BY 1 ASC;
 END;
+
 
 --------------------------------------------
 ----------------------------------
 --- GESTOR LOG LOGIN
 ------------------------------------------------------------------------------------------------
 
-create or replace  PROCEDURE LAROATLB_INGRESA_LOG_LOGIN(
+create or replace PROCEDURE LAROATLB_INGRESA_LOG_LOGIN(
     P_NOMBRE_USUARIO VARCHAR2)
 IS
 BEGIN
@@ -162,12 +170,26 @@ END;
 --------------------------------------------
 ----------------------------------
 --- GESTIONA EL STOCK DEL PRODUCTO USADO
-CREATE OR REPLACE TRIGGER LAROATLB_DESCONTAR_STOCK
-AFTER INSERT ON LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO
+create or replace TRIGGER LAROATLB_DESCONTAR_STOCK
+BEFORE INSERT ON LAROATLB_DETALLE_PRODUCTO_TRATAMIENTO
 FOR EACH ROW
+DECLARE
+    v_stock_actual NUMBER;
 BEGIN
-    -- Actualizar el stock del producto
-    UPDATE LAROATLB_PRODUCTO
-    SET STOCK = STOCK - :NEW.CANTIDAD
+    -- Recuperar el stock actual del producto
+    SELECT STOCK
+    INTO v_stock_actual
+    FROM LAROATLB_PRODUCTO
     WHERE ID_PRODUCTO = :NEW.ID_PRODUCTO;
+
+    -- Verificar si la cantidad a restar es válida
+    IF v_stock_actual >= :NEW.CANTIDAD THEN
+        -- Actualizar el stock del producto
+        UPDATE LAROATLB_PRODUCTO
+        SET STOCK = STOCK - :NEW.CANTIDAD
+        WHERE ID_PRODUCTO = :NEW.ID_PRODUCTO;
+    ELSE
+        -- Si no hay suficiente stock, lanzar un error
+        RAISE_APPLICATION_ERROR(-20001, 'No hay suficiente stock para el producto ' || :NEW.ID_PRODUCTO);
+    END IF;
 END;
