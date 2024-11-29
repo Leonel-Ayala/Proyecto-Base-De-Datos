@@ -3,19 +3,7 @@
 ------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------
 
-create or replace TRIGGER LAAB_MAYUS_SECRE
-BEFORE INSERT
-ON LAROATLB_SECRETARIA
-FOR EACH ROW
-BEGIN
-    :NEW.NOMBRE := UPPER(:NEW.NOMBRE);
-    :NEW.APELLIDO1 := UPPER(:NEW.APELLIDO1);
-    :NEW.APELLIDO2 := UPPER(:NEW.APELLIDO2);
-    :NEW.EMAIL := UPPER(:NEW.EMAIL);
-END;
-
-------------------------------------------------------------------------------------------------
-create or replace  TRIGGER LAROATLB_ID_CALLE_CLIENTE
+create or replace TRIGGER LAROATLB_ID_CALLE_CLIENTE
   BEFORE INSERT 
   ON LAROATLB_CALLE_CLIENTE
   FOR EACH ROW
@@ -25,11 +13,8 @@ BEGIN
   FROM LAROATLB_CALLE_CLIENTE;
 END;
 
-
 ------------------------------------------------------------------------------------------------
-
-
-create or replace  TRIGGER LAROATLB_ID_CITA
+create or replace TRIGGER LAROATLB_ID_CITA
   BEFORE INSERT 
   ON LAROATLB_CITA
   FOR EACH ROW
@@ -39,9 +24,9 @@ BEGIN
   FROM LAROATLB_CITA;
 END;
 
-
 ------------------------------------------------------------------------------------------------
-create or replace  TRIGGER LAROATLB_ID_CLIENTE
+
+create or replace TRIGGER LAROATLB_ID_CLIENTE
   BEFORE INSERT 
   ON LAROATLB_CLIENTE
   FOR EACH ROW
@@ -51,10 +36,7 @@ BEGIN
   FROM LAROATLB_CLIENTE;
 END;
 
-
-
 ------------------------------------------------------------------------------------------------
-
 create or replace TRIGGER LAROATLB_ID_COMUNA_CLIENTE
   BEFORE INSERT 
   ON LAROATLB_COMUNA_CLIENTE
@@ -64,6 +46,7 @@ BEGIN
   SELECT NVL(MAX(ID_COMUNA),0)+1 INTO :NEW.ID_COMUNA
   FROM LAROATLB_COMUNA_CLIENTE;
 END;
+
 
 ------------------------------------------------------------------------------------------------
 create or replace TRIGGER LAROATLB_ID_ESPECIE
@@ -78,8 +61,7 @@ END;
 
 
 ------------------------------------------------------------------------------------------------
-
-create or replace  TRIGGER LAROATLB_ID_LOG_LOGIN
+create or replace TRIGGER LAROATLB_ID_LOG_LOGIN
   BEFORE INSERT 
   ON LAROATLB_LOG_LOGIN
   FOR EACH ROW
@@ -88,6 +70,7 @@ BEGIN
   SELECT NVL(MAX(ID_LOGIN),0)+1 INTO :NEW.ID_LOGIN
   FROM LAROATLB_LOG_LOGIN;
 END;
+
 
 ------------------------------------------------------------------------------------------------
 create or replace TRIGGER LAROATLB_ID_MASCOTA
@@ -99,7 +82,6 @@ BEGIN
   SELECT NVL(MAX(ID_MASCOTA),0)+1 INTO :NEW.ID_MASCOTA
   FROM LAROATLB_MASCOTA;
 END;
-
 
 ------------------------------------------------------------------------------------------------
 create or replace TRIGGER LAROATLB_ID_PRODUCTO
@@ -114,7 +96,7 @@ END;
 
 
 ------------------------------------------------------------------------------------------------
-create or replace  TRIGGER LAROATLB_ID_RAZA
+create or replace TRIGGER LAROATLB_ID_RAZA
   BEFORE INSERT 
   ON LAROATLB_RAZA
   FOR EACH ROW
@@ -126,7 +108,7 @@ END;
 
 
 ------------------------------------------------------------------------------------------------
-create or replace  TRIGGER LAROATLB_ID_REGION
+create or replace TRIGGER LAROATLB_ID_REGION
   BEFORE INSERT 
   ON LAROATLB_REGION_CLIENTE
   FOR EACH ROW
@@ -139,6 +121,7 @@ END;
 
 
 ------------------------------------------------------------------------------------------------
+
 create or replace TRIGGER LAROATLB_ID_SECRETARIA
   BEFORE INSERT
   ON LAROATLB_SECRETARIA
@@ -160,7 +143,6 @@ BEGIN
   FROM LAROATLB_TRATAMIENTO;
 END;
 
-
 ------------------------------------------------------------------------------------------------
 create or replace TRIGGER LAROATLB_ID_USUARIOS
   BEFORE INSERT 
@@ -172,9 +154,8 @@ BEGIN
   FROM LAROATLB_USUARIOS;
 END;
 
-
 ------------------------------------------------------------------------------------------------
-create or replace  TRIGGER LAROATLB_ID_VETERINARIO
+create or replace TRIGGER LAROATLB_ID_VETERINARIO
   BEFORE INSERT 
   ON LAROATLB_VETERINARIO
   FOR EACH ROW
@@ -184,11 +165,9 @@ BEGIN
   FROM LAROATLB_VETERINARIO;
 END;
 
-
-
 ------------------------------------------------------------------------------------------------
 create or replace TRIGGER LAROATLB_MAYUS_CLIENTE
-BEFORE INSERT
+BEFORE INSERT OR UPDATE
 ON LAROATLB_CLIENTE
 FOR EACH ROW
 BEGIN
@@ -199,16 +178,13 @@ END;
 
 
 ------------------------------------------------------------------------------------------------
-
-create or replace  TRIGGER LAROATLB_MAYUS_ESPECIE
+create or replace TRIGGER LAROATLB_MAYUS_ESPECIE
 BEFORE INSERT OR UPDATE
 ON LAROATLB_ESPECIE
 FOR EACH ROW
 BEGIN
     :NEW.NOMBRE_ESPECIE := UPPER(:NEW.NOMBRE_ESPECIE);
 END;
-
-
 
 ------------------------------------------------------------------------------------------------
 create or replace TRIGGER LAROATLB_MAYUS_MASCOTA
@@ -220,7 +196,6 @@ BEGIN
 END;
 
 
-
 ------------------------------------------------------------------------------------------------
 create or replace TRIGGER LAROATLB_MAYUS_PRODU
 BEFORE INSERT 
@@ -229,8 +204,6 @@ FOR EACH ROW
 BEGIN
     :NEW.NOMBRE_PRODUCTO := UPPER(:NEW.NOMBRE_PRODUCTO);
 END;
-
-
 
 
 ------------------------------------------------------------------------------------------------
@@ -244,9 +217,8 @@ END;
 
 
 
-
 ------------------------------------------------------------------------------------------------
-create or replace  TRIGGER LAROATLB_MAYUS_SECRE
+create or replace TRIGGER LAROATLB_MAYUS_SECRE
 BEFORE INSERT OR UPDATE
 ON LAROATLB_SECRETARIA
 FOR EACH ROW
@@ -256,7 +228,6 @@ BEGIN
     :NEW.APELLIDO2 := UPPER(:NEW.APELLIDO2);
     :NEW.EMAIL := UPPER(:NEW.EMAIL);
 END;
-
 
 
 ------------------------------------------------------------------------------------------------
@@ -272,5 +243,4 @@ BEGIN
     :NEW.EMAIL := UPPER(:NEW.EMAIL);
     :NEW.ESPECIALIDAD := UPPER(:NEW.ESPECIALIDAD);
 END;
-
 -------
