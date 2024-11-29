@@ -1,8 +1,7 @@
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 -- MANTENEDOR PARA VETERINARIO
-
-create or replace  PROCEDURE LAROATLB_GESTIONAR_VETERINARIOS (
+create or replace PROCEDURE LAROATLB_GESTIONAR_VETERINARIOS (
     p_operacion       VARCHAR2,
     p_id_veterinario  NUMBER DEFAULT NULL,
     p_nombre          VARCHAR2 DEFAULT NULL,
@@ -48,20 +47,21 @@ END;
 
 ------------------------
 --CURSOR LISTAR VETERINARIO
-
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_VETERINARIOS (
+create or replace PROCEDURE LAROATLB_LISTAR_VETERINARIOS (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
 BEGIN
     OPEN p_cursor FOR
         SELECT ID_VETERINARIO, NOMBRE, APELLIDO1, APELLIDO2, ESPECIALIDAD, TELEFONO, EMAIL
-        FROM LAROATLB_VETERINARIO;
+        FROM LAROATLB_VETERINARIO
+        ORDER BY 1 ASC;
 END;
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE SECRETARIA
+
 create or replace PROCEDURE LAROATLB_GESTIONAR_SECRETARIAS (
     p_operacion       VARCHAR2,
     p_id_secretaria   NUMBER DEFAULT NULL,
@@ -116,16 +116,18 @@ END;
 
 ------------------------
 --- CURSOR PARA LISTAR SECRE
-
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_SECRETARIAS (
+create or replace PROCEDURE LAROATLB_LISTAR_SECRETARIAS (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
 BEGIN
     OPEN p_cursor FOR
         SELECT ID_SECRE, NOMBRE, APELLIDO1, APELLIDO2, TELEFONO, EMAIL
-        FROM LAROATLB_SECRETARIA;
+        FROM LAROATLB_SECRETARIA
+        ORDER BY 1 ASC;
 END;
+
+
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
@@ -133,7 +135,8 @@ END;
 
 --MANTENEDOR CLIENTE
 
-create or replace  PROCEDURE LAROATLB_GESTIONAR_CLIENTES (
+
+create or replace PROCEDURE LAROATLB_GESTIONAR_CLIENTES (
     p_operacion   VARCHAR2,
     p_id_cliente  NUMBER DEFAULT NULL,
     p_rut         NUMBER DEFAULT NULL,
@@ -190,12 +193,11 @@ EXCEPTION
 END;
 
 
-
-
 -------------------------------------------
 --CURSOR DE CLIENTE
 
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_CLIENTES (
+
+create or replace PROCEDURE LAROATLB_LISTAR_CLIENTES (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
@@ -208,7 +210,7 @@ BEGIN
             CA.APELLIDO1,
             CA.APELLIDO2,
             CA.TELEFONO,
-            CALLE.NOMBRE_CALLE || ',' || CALLE.NUMERO_CALLE||','||COM.NOMBRE_COMUNA||','||RE.NOMBRE_REGION  AS DIRECCION
+            CALLE.NOMBRE_CALLE || ',' || CALLE.NUMERO_CASA||','||COM.NOMBRE_COMUNA||','||RE.NOMBRE_REGION  AS DIRECCION
         FROM 
             LAROATLB_CLIENTE CA
         JOIN 
@@ -216,16 +218,16 @@ BEGIN
         JOIN 
             LAROATLB_COMUNA_CLIENTE COM ON CALLE.ID_COMUNA = COM.ID_COMUNA
         JOIN
-            LAROATLB_REGION_CLIENTE RE ON COM.ID_REGION = RE.ID_REGION;
+            LAROATLB_REGION_CLIENTE RE ON COM.ID_REGION = RE.ID_REGION
+        ORDER BY 1 ASC;
 END;
-
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 
 --MANTENEDOR DE REGION
 
-create or replace  PROCEDURE LAROATLB_GESTIONAR_REGIONES (
+create or replace PROCEDURE LAROATLB_GESTIONAR_REGIONES (
     p_operacion     VARCHAR2,
     p_id_region     NUMBER DEFAULT NULL,
     p_nombre_region VARCHAR2 DEFAULT NULL
@@ -264,22 +266,25 @@ EXCEPTION
 END;
 
 
+
 --------------------------------------------}
 -- CURSOR DE REGION
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_REGIONES (
+create or replace PROCEDURE LAROATLB_LISTAR_REGIONES (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
 BEGIN
     OPEN p_cursor FOR
         SELECT ID_REGION, NOMBRE_REGION
-        FROM LAROATLB_REGION_CLIENTE;
+        FROM LAROATLB_REGION_CLIENTE
+        ORDER BY 1 ASC;
 END;
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 -- MANTENEDOR DE COMUNA
-create or replace  PROCEDURE LAROATLB_GESTIONAR_COMUNAS (
+
+create or replace PROCEDURE LAROATLB_GESTIONAR_COMUNAS (
     p_operacion     VARCHAR2,
     p_id_comuna     NUMBER DEFAULT NULL,
     p_nombre_comuna VARCHAR2 DEFAULT NULL,
@@ -318,23 +323,25 @@ EXCEPTION
     WHEN OTHERS THEN
         RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
 END;
+
 ----------------------------------------------------------------------------------
 --- CURSOR DE COMUNA
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_COMUNAS (
+create or replace PROCEDURE LAROATLB_LISTAR_COMUNAS (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
 BEGIN
     OPEN p_cursor FOR
         SELECT ID_COMUNA, NOMBRE_COMUNA, ID_REGION
-        FROM LAROATLB_COMUNA_CLIENTE;
+        FROM LAROATLB_COMUNA_CLIENTE
+        ORDER BY 1 ASC;
 END;
 
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 -- MANTENEDOR DE CALLES CLIENTE
-create or replace  PROCEDURE LAROATLB_GESTIONAR_CALLES (
+create or replace PROCEDURE LAROATLB_GESTIONAR_CALLES (
     p_operacion     VARCHAR2,
     p_id_calle      NUMBER DEFAULT NULL,
     p_nombre_calle  VARCHAR2 DEFAULT NULL,
@@ -377,22 +384,24 @@ EXCEPTION
 END;
 ---------------------------------------------------------------------------------
 ---------CURSOR DER CALLE
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_CALLES (
+create or replace PROCEDURE LAROATLB_LISTAR_CALLES (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
 BEGIN
     OPEN p_cursor FOR
-        SELECT ID_CALLE, NOMBRE_CALLE, NUMERO_CALLE, ID_COMUNA
-        FROM LAROATLB_CALLE_CLIENTE;
+        SELECT ID_CALLE, NOMBRE_CALLE, NUMERO_CASA, ID_COMUNA
+        FROM LAROATLB_CALLE_CLIENTE
+        ORDER BY 1 ASC;
 END;
+
 
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE RAZA
 
-create or replace  PROCEDURE LAROATLB_GESTIONAR_RAZAS (
+create or replace PROCEDURE LAROATLB_GESTIONAR_RAZAS (
     p_operacion    VARCHAR2,
     p_id_raza      NUMBER DEFAULT NULL,
     p_nombre_raza  VARCHAR2 DEFAULT NULL,
@@ -434,7 +443,7 @@ END;
 
 ------------------------------------------
 ----------CURSOR DE RAZA
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_RAZAS (
+create or replace PROCEDURE LAROATLB_LISTAR_RAZAS (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
@@ -442,14 +451,16 @@ BEGIN
     OPEN p_cursor FOR
         SELECT r.ID_RAZA, r.NOMBRE_RAZA, e.NOMBRE_ESPECIE
         FROM LAROATLB_RAZA r
-        JOIN LAROATLB_ESPECIE e ON r.ID_ESPECIE = e.ID_ESPECIE;
+        JOIN LAROATLB_ESPECIE e ON r.ID_ESPECIE = e.ID_ESPECIE
+        ORDER BY 1 ASC;
 END;
+
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE ESPECIE
 
-CREATE OR REPLACE PROCEDURE LAROATLB_GESTIONAR_ESPECIES (
+create or replace PROCEDURE LAROATLB_GESTIONAR_ESPECIES (
     p_operacion    VARCHAR2,
     p_id_especie   NUMBER DEFAULT NULL,
     p_nombre_especie VARCHAR2 DEFAULT NULL
@@ -460,9 +471,9 @@ BEGIN
     IF UPPER(p_operacion) = 'C' THEN
         -- Inserción de una nueva especie
         INSERT INTO LAROATLB_ESPECIE (
-            NOMBRE_ESPECIE
+             NOMBRE_ESPECIE
         ) VALUES (
-            p_nombre_especie
+             p_nombre_especie
         );
 
     ELSIF UPPER(p_operacion) = 'U' THEN
@@ -487,22 +498,26 @@ EXCEPTION
         RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
 END;
 
+
 ----------------------------------------------------------
 ---CURSOR DE ESPECIE
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_ESPECIES (
+create or replace PROCEDURE LAROATLB_LISTAR_ESPECIES (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
 BEGIN
     OPEN p_cursor FOR
         SELECT ID_ESPECIE, NOMBRE_ESPECIE
-        FROM LAROATLB_ESPECIE;
+        FROM LAROATLB_ESPECIE
+        ORDER BY 1 ASC;
 END;
+
 
 ------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------
 --MANTENEDOR DE MASCOTA
-create or replace  PROCEDURE LAROATLB_GESTIONAR_MASCOTAS (
+
+create or replace PROCEDURE LAROATLB_GESTIONAR_MASCOTAS (
     p_operacion    VARCHAR2,
     p_id_mascota   NUMBER DEFAULT NULL,
     p_nombre       VARCHAR2 DEFAULT NULL,
@@ -543,9 +558,11 @@ EXCEPTION
     WHEN OTHERS THEN
         RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
 END;
+
 -------------------------------------------------------
 --------CURSOR DE MASCOTA
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_MASCOTAS (
+
+create or replace PROCEDURE LAROATLB_LISTAR_MASCOTAS (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
@@ -554,16 +571,17 @@ BEGIN
         SELECT m.ID_MASCOTA, m.NOMBRE, m.EDAD, c.NOMBRE AS CLIENTE, r.NOMBRE_RAZA
         FROM LAROATLB_MASCOTA m
         JOIN LAROATLB_CLIENTE c ON m.ID_CLIENTE = c.ID_CLIENTE
-        JOIN LAROATLB_RAZA r ON m.ID_RAZA = r.ID_RAZA;
+        JOIN LAROATLB_RAZA r ON m.ID_RAZA = r.ID_RAZA
+        ORDER BY 1 ASC;
 END;
-
 
 
 
 ----------------------------------------------------------------------------------------
 --MANTENEDOR DE PRODUCTOS
 
-create or replace  PROCEDURE LAROATLB_GESTIONAR_PRODUCTOS (
+
+create or replace PROCEDURE LAROATLB_GESTIONAR_PRODUCTOS (
     p_operacion       VARCHAR2,
     p_id_producto     NUMBER DEFAULT NULL,
     p_nombre_producto VARCHAR2 DEFAULT NULL,
@@ -604,27 +622,30 @@ END;
 
 
 
+
 -- CURSOR DE PRODUCTOS
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_PRODUCTOS (
+
+create or replace PROCEDURE LAROATLB_LISTAR_PRODUCTOS (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
 BEGIN
     OPEN p_cursor FOR
         SELECT ID_PRODUCTO, NOMBRE_PRODUCTO, STOCK
-        FROM LAROATLB_PRODUCTO;
+        FROM LAROATLB_PRODUCTO
+        ORDER BY 1 ASC;
 END;
-
 
 
 ---------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------
 -- MANTENEDOR DE USUARIOS
-create or replace  PROCEDURE LAROATLB_GESTIONAR_USUARIOS (
+
+create or replace PROCEDURE LAROATLB_GESTIONAR_USUARIOS (
     p_operacion      VARCHAR2,
     p_id_usuario     NUMBER DEFAULT NULL,
     p_nombre_usuario VARCHAR2 DEFAULT NULL,
-    p_rol_usuario    NUMBER DEFAULT NULL,
+    p_rol_usuario    VARCHAR2 DEFAULT NULL,
     p_contra_usuario VARCHAR2 DEFAULT NULL
 )
 IS
@@ -662,16 +683,18 @@ EXCEPTION
         RAISE_APPLICATION_ERROR(-20001, 'Error en el procedimiento: ' || SQLERRM);
 END;
 
+
 ---------------------
 --CURSOR USUARIOS
-
-CREATE OR REPLACE PROCEDURE LAROATLB_LISTAR_USUARIOS (
+create or replace PROCEDURE LAROATLB_LISTAR_USUARIOS (
     p_cursor OUT SYS_REFCURSOR
 )
 IS
 BEGIN
     OPEN p_cursor FOR
         SELECT ID_USUARIO, NOMBRE_USUARIO, ROL_USUARIO, CONTRA_USUARIO
-        FROM LAROATLB_USUARIOS;
+        FROM LAROATLB_USUARIOS
+        ORDER BY 1 ASC;
 END;
+
 
